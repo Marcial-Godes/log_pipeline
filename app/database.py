@@ -1,9 +1,19 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "postgresql://postgres:postgres@postgres:5432/logs_db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(DATABASE_URL)
+if not DATABASE_URL:
+    raise Exception("❌ DATABASE_URL not set")
+
+print("DATABASE_URL:", DATABASE_URL)
+
+# 🔥 IMPORTANTE PARA RENDER
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,   # evita conexiones muertas
+)
 
 SessionLocal = sessionmaker(
     autocommit=False,
