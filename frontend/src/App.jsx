@@ -6,22 +6,30 @@ function App() {
   const [summary, setSummary] = useState(null);
   const [logs, setLogs] = useState([]);
   const [topEndpoints, setTopEndpoints] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      const [s, l, t] = await Promise.all([
+        fetch(`${API_URL}/logs/stats/summary`).then((r) => r.json()),
+        fetch(`${API_URL}/logs/recent`).then((r) => r.json()),
+        fetch(`${API_URL}/logs/stats/top-endpoints`).then((r) => r.json()),
+      ]);
+
+      setSummary(s);
+      setLogs(l);
+      setTopEndpoints(t);
+      setLoading(false);
+    } catch (err) {
+      console.error("Retrying...", err);
+
+      // 🔁 retry después de 3s
+      setTimeout(fetchData, 3000);
+    }
+  };
 
   useEffect(() => {
-    fetch(`${API_URL}/logs/stats/summary`)
-      .then((res) => res.json())
-      .then(setSummary)
-      .catch(console.error);
-
-    fetch(`${API_URL}/logs/recent`)
-      .then((res) => res.json())
-      .then(setLogs)
-      .catch(console.error);
-
-    fetch(`${API_URL}/logs/stats/top-endpoints`)
-      .then((res) => res.json())
-      .then(setTopEndpoints)
-      .catch(console.error);
+    fetchData();
   }, []);
 
   return (
@@ -30,7 +38,10 @@ function App() {
         📊 Log Dashboard
       </h1>
 
-      {/* SUMMARY */}
+      {loading && (
+        <p className="text-center text-gray-500">Cargando datos...</p>
+      )}
+
       {summary && (
         <div className="flex justify-center gap-4 mb-6">
           <div className="bg-white shadow p-4 rounded text-center">
@@ -53,7 +64,6 @@ function App() {
       )}
 
       <div className="grid grid-cols-4 gap-6">
-        {/* LEFT */}
         <div className="col-span-1 bg-white shadow rounded p-4">
           <h2 className="font-semibold mb-2">Top Endpoints</h2>
           <ul className="space-y-1">
@@ -65,7 +75,6 @@ function App() {
           </ul>
         </div>
 
-        {/* RIGHT */}
         <div className="col-span-3 bg-white shadow rounded p-4 overflow-auto max-h-[400px]">
           <h2 className="font-semibold mb-2">Logs</h2>
           <table className="w-full text-sm">
