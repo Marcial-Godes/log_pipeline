@@ -33,3 +33,5 @@ dist/
 # IDE
 .vscode/
 .idea/
+
+frontend/dist
