@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Errors Timeseries</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b132b;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin-top: 40px;
+    }
+
+    .container {
+      width: 80%;
+      max-width: 900px;
+      background: #1c2541;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+
+    select {
+      margin-bottom: 15px;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    canvas {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>🚨 Errors Timeseries</h1>
+
+  <div class="container">
+
+    <select id="interval">
+      <option value="second">Segundos</option>
+      <option value="minute" selected>Minutos</option>
+      <option value="hour">Horas</option>
+    </select>
+
+    <canvas id="chart"></canvas>
+
+  </div>
+
+  <script>
+    let chart;
+
+    async function loadErrors() {
+      const interval = document.getElementById("interval").value;
+
+      const res = await fetch(
+        `http://127.0.0.1:8000/logs/metrics/errors?interval=${interval}`
+      );
+
+      const data = await res.json();
+
+      const labels = data.map(d => d.time);
+      const values = data.map(d => d.errors);
+
+      if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = values;
+        chart.update();
+        return;
+      }
+
+      const ctx = document.getElementById("chart").getContext("2d");
+
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Errors",
+            data: values,
+            borderColor: "#4cc9f0",
+            backgroundColor: "rgba(76, 201, 240, 0.2)",
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: "white"
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "white"
+              }
+            },
+            y: {
+              ticks: {
+                color: "white"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    document.getElementById("interval")
+      .addEventListener("change", loadErrors);
+
+    loadErrors();
+  </script>
+
+</body>
+</html>

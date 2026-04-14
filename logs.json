@@ -1,0 +1,18 @@
+[
+    {
+        "level": "INFO",
+        "message": "User login",
+        "service": "auth",
+        "endpoint": "/login",
+        "method": "POST",
+        "status_code": 200
+    },
+    {
+        "level": "ERROR",
+        "message": "Database error",
+        "service": "api",
+        "endpoint": "/users",
+        "method": "GET",
+        "status_code": 500
+    }
+]
