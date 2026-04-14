@@ -4,7 +4,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
-load_dotenv()
+
+if os.getenv("ENV") != "production":
+    load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
