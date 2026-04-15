@@ -18,7 +18,7 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [alerts, setAlerts] = useState([]);
 
-  const [lastErrors, setLastErrors] = useState(0);
+  const [lastErrors, setLastErrors] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
 
   const [search, setSearch] = useState("");
@@ -36,16 +36,16 @@ function App() {
       setSummary(summaryData);
       setLogs(logsData);
 
-      // 🔥 DETECCIÓN DE ALERTAS (SIN WS)
-      if (summaryData.errors > lastErrors) {
+      // 🔥 ALERTAS ROBUSTAS
+      if (lastErrors !== null && summaryData.errors > lastErrors) {
         const diff = summaryData.errors - lastErrors;
 
         setAlerts((prev) => [
           {
             id: Date.now(),
-            message: `+${diff} errores detectados`,
+            message: `🚨 ${diff} nuevos errores`,
           },
-          ...prev.slice(0, 4),
+          ...prev,
         ]);
       }
 
@@ -53,19 +53,17 @@ function App() {
       setLastUpdate(new Date());
 
     } catch (error) {
-      console.error("🔥 ERROR FETCH:", error);
+      console.error("ERROR:", error);
     }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 3000); // 🔥 más rápido
+    const interval = setInterval(fetchData, 2000); // más reactivo
     return () => clearInterval(interval);
   }, [lastErrors]);
 
-  if (!summary) {
-    return <div className="p-6 text-center">Cargando...</div>;
-  }
+  if (!summary) return <div className="p-6">Cargando...</div>;
 
   const pieData = [
     { name: "Correctos", value: summary.success },
@@ -87,11 +85,14 @@ function App() {
 
       <h1 className="text-4xl text-center mb-2">📊 Log Dashboard</h1>
 
-      {/* 🔥 ALERTAS */}
+      {/* 🔥 ALERTAS VISUALES PRO */}
       <div className="space-y-2 mb-4">
         {alerts.map((a) => (
-          <div key={a.id} className="bg-red-500 text-white p-2 rounded">
-            🚨 {a.message}
+          <div
+            key={a.id}
+            className="bg-red-600 text-white p-3 rounded shadow animate-pulse"
+          >
+            {a.message}
           </div>
         ))}
       </div>
