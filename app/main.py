@@ -1,72 +1,53 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.api.routes import logs, analytics
-from app.database import Base, engine, SessionLocal
+from app.database import get_db
 from app.models.log import Log
 
 from app.websocket.manager import manager
 
-app = FastAPI()
+router = APIRouter(prefix="/logs", tags=["logs"])
+
 
 # =========================
-# WEBSOCKET
+# CREATE LOG
 # =========================
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+@router.post("/")
+async def create_log(log: dict, db: Session = Depends(get_db)):
+    new_log = Log(**log)
+    db.add(new_log)
+    db.commit()
+    db.refresh(new_log)
 
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+    await manager.broadcast({
+        "type": "new_log",
+        "data": {
+            "endpoint": new_log.endpoint,
+            "method": new_log.method,
+            "status_code": new_log.status_code,
+        }
+    })
 
-# =========================
-# DB INIT
-# =========================
-def init_db():
-    Base.metadata.create_all(bind=engine)
+    return new_log
 
-@app.on_event("startup")
-def startup_event():
-    init_db()
-
-    db = SessionLocal()
-
-    if db.query(Log).count() == 0:
-        sample_logs = [
-            Log(endpoint="/login", method="POST", status_code=200),
-            Log(endpoint="/orders", method="GET", status_code=200),
-        ]
-
-        for log in sample_logs:
-            db.add(log)
-
-        db.commit()
-
-    db.close()
 
 # =========================
-# HEALTH
+# 🔥 GET RECENT LOGS (FALTABA ESTO)
 # =========================
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+@router.get("/recent")
+def get_recent_logs(db: Session = Depends(get_db)):
+    logs = (
+        db.query(Log)
+        .order_by(Log.id.desc())
+        .limit(50)
+        .all()
+    )
 
-# =========================
-# CORS
-# =========================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# =========================
-# ROUTES
-# =========================
-app.include_router(logs.router)
-app.include_router(analytics.router)
+    return [
+        {
+            "endpoint": log.endpoint,
+            "method": log.method,
+            "status_code": log.status_code,
+        }
+        for log in logs
+    ]

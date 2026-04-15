@@ -1,104 +1,53 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from app.database import get_db
 from app.models.log import Log
-
-# 🔥 FIX IMPORT (SIN CIRCULAR)
 from app.websocket.manager import manager
 
-router = APIRouter(prefix="/logs/stats", tags=["analytics"])
+router = APIRouter(prefix="/logs", tags=["logs"])
 
 
 # =========================
-# SUMMARY
+# CREATE LOG
 # =========================
-@router.get("/summary")
-def get_summary(db: Session = Depends(get_db)):
-    total = db.query(func.count(Log.id)).scalar() or 0
+@router.post("/")
+async def create_log(log: dict, db: Session = Depends(get_db)):
+    new_log = Log(**log)
+    db.add(new_log)
+    db.commit()
+    db.refresh(new_log)
 
-    success = (
-        db.query(func.count(Log.id))
-        .filter(Log.status_code < 400)
-        .scalar()
-        or 0
-    )
+    # 🔥 enviar por websocket
+    await manager.broadcast({
+        "type": "new_log",
+        "data": {
+            "endpoint": new_log.endpoint,
+            "method": new_log.method,
+            "status_code": new_log.status_code,
+        }
+    })
 
-    errors = (
-        db.query(func.count(Log.id))
-        .filter(Log.status_code >= 400)
-        .scalar()
-        or 0
-    )
-
-    return {
-        "total": int(total),
-        "success": int(success),
-        "errors": int(errors),
-    }
+    return new_log
 
 
 # =========================
-# TOP ENDPOINTS
+# GET RECENT LOGS
 # =========================
-@router.get("/top-endpoints")
-def top_endpoints(db: Session = Depends(get_db)):
-    results = (
-        db.query(Log.endpoint, func.count(Log.id).label("count"))
-        .group_by(Log.endpoint)
-        .order_by(func.count(Log.id).desc())
-        .limit(5)
+@router.get("/recent")
+def get_recent_logs(db: Session = Depends(get_db)):
+    logs = (
+        db.query(Log)
+        .order_by(Log.id.desc())
+        .limit(50)
         .all()
     )
 
     return [
-        {"endpoint": r.endpoint, "count": int(r.count)}
-        for r in results
+        {
+            "endpoint": log.endpoint,
+            "method": log.method,
+            "status_code": log.status_code,
+        }
+        for log in logs
     ]
-
-
-# =========================
-# STATUS DISTRIBUTION
-# =========================
-@router.get("/status-distribution")
-def status_distribution(db: Session = Depends(get_db)):
-    results = (
-        db.query(Log.status_code, func.count(Log.id))
-        .group_by(Log.status_code)
-        .all()
-    )
-
-    return [
-        {"status": r[0], "count": int(r[1])}
-        for r in results
-    ]
-
-
-# =========================
-# 🔥 REALTIME ALERT CHECK
-# =========================
-last_error_count = 0
-
-
-@router.get("/realtime-check")
-async def realtime_check(db: Session = Depends(get_db)):
-    global last_error_count
-
-    errors = (
-        db.query(func.count(Log.id))
-        .filter(Log.status_code >= 400)
-        .scalar()
-        or 0
-    )
-
-    # 🔥 SOLO SI AUMENTAN LOS ERRORES
-    if errors > last_error_count:
-        await manager.broadcast({
-            "type": "error",
-            "message": f"Errores totales: {errors}",
-        })
-
-    last_error_count = errors
-
-    return {"errors": errors}

@@ -3,13 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.log import Log
-
-# ✅ IMPORT CORRECTO
 from app.websocket.manager import manager
 
 router = APIRouter(prefix="/logs", tags=["logs"])
 
 
+# =========================
+# CREATE LOG
+# =========================
 @router.post("/")
 async def create_log(log: dict, db: Session = Depends(get_db)):
     new_log = Log(**log)
@@ -28,3 +29,25 @@ async def create_log(log: dict, db: Session = Depends(get_db)):
     })
 
     return new_log
+
+
+# =========================
+# GET RECENT LOGS
+# =========================
+@router.get("/recent")
+def get_recent_logs(db: Session = Depends(get_db)):
+    logs = (
+        db.query(Log)
+        .order_by(Log.id.desc())
+        .limit(50)
+        .all()
+    )
+
+    return [
+        {
+            "endpoint": log.endpoint,
+            "method": log.method,
+            "status_code": log.status_code,
+        }
+        for log in logs
+    ]
