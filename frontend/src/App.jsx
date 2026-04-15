@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
+  Cell
 } from "recharts";
 
 const API_URL = "https://log-pipeline.onrender.com";
