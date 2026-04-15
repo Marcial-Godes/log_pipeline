@@ -12,13 +12,12 @@ import {
 } from "recharts";
 
 const API_URL = "https://log-pipeline.onrender.com";
+const WS_URL = "wss://log-pipeline.onrender.com/ws";
 
 function App() {
   const [summary, setSummary] = useState(null);
   const [logs, setLogs] = useState([]);
   const [alerts, setAlerts] = useState([]);
-
-  const [lastLogCount, setLastLogCount] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(null);
 
   const MAX_ALERTS = 3;
@@ -36,7 +35,8 @@ function App() {
     }, 4000);
   };
 
-  const fetchData = async () => {
+  // 🔥 FETCH INICIAL (solo una vez)
+  const fetchInitialData = async () => {
     try {
       const [summaryRes, logsRes] = await Promise.all([
         fetch(`${API_URL}/logs/stats/summary`),
@@ -48,33 +48,59 @@ function App() {
 
       setSummary(summaryData);
       setLogs(logsData);
-
-      // 🔥 DETECCIÓN REAL (por logs nuevos)
-      if (logsData.length > lastLogCount) {
-        const newLogs = logsData.slice(0, logsData.length - lastLogCount);
-
-        const newErrors = newLogs.filter(
-          (log) => log.status_code >= 400
-        );
-
-        if (newErrors.length > 0) {
-          addAlert(`🚨 ${newErrors.length} errores nuevos`);
-        }
-      }
-
-      setLastLogCount(logsData.length);
       setLastUpdate(new Date());
-
     } catch (error) {
       console.error("ERROR:", error);
     }
   };
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 2000);
-    return () => clearInterval(interval);
-  }, [lastLogCount]);
+    fetchInitialData();
+
+    // 🔥 WEBSOCKET
+    const ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      console.log("🟢 WS conectado");
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+
+      if (msg.type === "new_log") {
+        const log = msg.data;
+
+        // añadir log arriba
+        setLogs((prev) => [log, ...prev.slice(0, 49)]);
+
+        // actualizar summary manualmente
+        setSummary((prev) => {
+          if (!prev) return prev;
+
+          const isError = log.status_code >= 400;
+
+          return {
+            total: prev.total + 1,
+            success: isError ? prev.success : prev.success + 1,
+            errors: isError ? prev.errors + 1 : prev.errors,
+          };
+        });
+
+        // 🔥 alerta si error
+        if (log.status_code >= 400) {
+          addAlert(`🚨 Error ${log.status_code} en ${log.endpoint}`);
+        }
+
+        setLastUpdate(new Date());
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("🔴 WS desconectado");
+    };
+
+    return () => ws.close();
+  }, []);
 
   if (!summary) return <div className="p-6">Cargando...</div>;
 
