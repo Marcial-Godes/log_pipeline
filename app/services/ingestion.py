@@ -1,47 +1,41 @@
 from sqlalchemy.orm import Session
 from typing import List
-import json
 from datetime import datetime
 
 from app.schemas.log import LogCreate
+from app.models.log import Log
 from app.metrics.metrics import metrics
-from app.core.redis_client import redis_client
-
-
-def serialize_log(data: dict) -> dict:
-    """
-    Convierte tipos no serializables (datetime) a formato JSON válido
-    """
-    if data.get("timestamp") and isinstance(data["timestamp"], datetime):
-        data["timestamp"] = data["timestamp"].isoformat()
-
-    return data
 
 
 def create_log(db: Session, log: LogCreate):
     print("🔥 create_log ejecutado")
 
     try:
-        data = log.dict()
-        data = serialize_log(data)
+        print(f"📥 Log recibido: {log.dict()}")
 
-        print(f"📥 Log recibido: {data}")
+        new_log = Log(
+            endpoint=log.endpoint,
+            method=log.method,
+            status_code=log.status_code,
+            timestamp=log.timestamp or datetime.utcnow(),
+        )
 
-        redis_client.rpush("log_queue", json.dumps(data))
-        print("📦 enviado a redis")
+        db.add(new_log)
+        db.commit()
 
-        length = redis_client.llen("log_queue")
-        print(f"📊 Cola tamaño después de push: {length}")
+        print("💾 guardado en DB")
 
     except Exception as e:
-        print("❌ ERROR enviando a Redis:", e)
+        print("❌ ERROR guardando en DB:", e)
+        db.rollback()
 
+    # métricas
     if log.status_code and log.status_code >= 400:
         metrics.log_received("ERROR")
     else:
         metrics.log_received("INFO")
 
-    return {"status": "queued"}
+    return {"status": "stored"}
 
 
 def create_logs_batch(db: Session, logs: List[LogCreate]):
@@ -49,18 +43,23 @@ def create_logs_batch(db: Session, logs: List[LogCreate]):
 
     try:
         for log in logs:
-            data = log.dict()
-            data = serialize_log(data)
+            print(f"📥 Log batch: {log.dict()}")
 
-            print(f"📥 Log batch: {data}")
+            new_log = Log(
+                endpoint=log.endpoint,
+                method=log.method,
+                status_code=log.status_code,
+                timestamp=log.timestamp or datetime.utcnow(),
+            )
 
-            redis_client.rpush("log_queue", json.dumps(data))
+            db.add(new_log)
 
-        length = redis_client.llen("log_queue")
-        print(f"📊 Cola tamaño después de batch: {length}")
+        db.commit()
+        print("💾 batch guardado en DB")
 
     except Exception as e:
-        print("❌ ERROR enviando batch a Redis:", e)
+        print("❌ ERROR guardando batch:", e)
+        db.rollback()
 
     for log in logs:
         if log.status_code and log.status_code >= 400:
@@ -68,4 +67,4 @@ def create_logs_batch(db: Session, logs: List[LogCreate]):
         else:
             metrics.log_received("INFO")
 
-    return {"status": "queued"}
+    return {"status": "stored"}
