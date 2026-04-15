@@ -43,12 +43,14 @@ function App() {
     fetchData();
 
     let ws;
+    let isWsAlive = false;
 
     try {
       ws = new WebSocket(WS_URL);
 
       ws.onopen = () => {
         console.log("🟢 WS conectado");
+        isWsAlive = true;
         setWsConnected(true);
       };
 
@@ -78,11 +80,13 @@ function App() {
 
       ws.onerror = () => {
         console.log("⚠️ WS error → fallback polling");
+        isWsAlive = false;
         setWsConnected(false);
       };
 
       ws.onclose = () => {
         console.log("🔴 WS cerrado → fallback polling");
+        isWsAlive = false;
         setWsConnected(false);
       };
     } catch (e) {
@@ -92,7 +96,7 @@ function App() {
 
     // 🔥 FALLBACK polling si WS falla
     const interval = setInterval(() => {
-      if (!wsConnected) {
+      if (!isWsAlive) {
         fetchData();
       }
     }, 5000);
@@ -101,7 +105,7 @@ function App() {
       if (ws) ws.close();
       clearInterval(interval);
     };
-  }, [wsConnected]);
+  }, []);
 
   if (!summary) return <div className="p-6">Cargando...</div>;
 
@@ -118,7 +122,6 @@ function App() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-
       <h1 className="text-4xl text-center mb-2">
         📊 Log Dashboard
       </h1>
@@ -160,7 +163,6 @@ function App() {
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-4 gap-6">
-
         <div className="col-span-3 bg-white shadow rounded p-4">
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={activityData}>
