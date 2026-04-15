@@ -8,7 +8,6 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
 } from "recharts";
 
 const API_URL = "https://log-pipeline.onrender.com";
@@ -24,20 +23,55 @@ function App() {
 
   const [lastUpdate, setLastUpdate] = useState(null);
 
-  const fetchData = () => {
-    fetch(`${API_URL}/logs/stats/summary`)
-      .then((res) => res.json())
-      .then(setSummary);
+  const [alert, setAlert] = useState(null);
 
-    fetch(`${API_URL}/logs/recent`)
-      .then((res) => res.json())
-      .then(setLogs);
+  // 🔥 FETCH PRO (ANTI-CRASH)
+  const fetchData = async () => {
+    try {
+      const [summaryRes, logsRes, topRes] = await Promise.all([
+        fetch(`${API_URL}/logs/stats/summary`),
+        fetch(`${API_URL}/logs/recent`),
+        fetch(`${API_URL}/logs/stats/top-endpoints`),
+      ]);
 
-    fetch(`${API_URL}/logs/stats/top-endpoints`)
-      .then((res) => res.json())
-      .then(setTopEndpoints);
+      if (!summaryRes.ok || !logsRes.ok || !topRes.ok) {
+        throw new Error("API no responde");
+      }
 
-    setLastUpdate(new Date());
+      const summaryData = await summaryRes.json();
+      const logsData = await logsRes.json();
+      const topData = await topRes.json();
+
+      setSummary(summaryData);
+      setLogs(logsData);
+      setTopEndpoints(topData);
+      setLastUpdate(new Date());
+
+      // 🔥 ALERTA PRO
+      const errorRate =
+        (summaryData.errors / summaryData.total) * 100;
+
+      if (errorRate > 30) {
+        setAlert({
+          type: "error",
+          message: `🚨 Alto porcentaje de errores (${errorRate.toFixed(
+            1
+          )}%)`,
+        });
+
+        // auto-hide
+        setTimeout(() => setAlert(null), 4000);
+      }
+    } catch (error) {
+      console.error("ERROR FETCH:", error);
+
+      setAlert({
+        type: "error",
+        message: "⚠️ No se pudo conectar con el servidor",
+      });
+
+      setTimeout(() => setAlert(null), 4000);
+    }
   };
 
   useEffect(() => {
@@ -75,21 +109,26 @@ function App() {
         📊 Log Dashboard
       </h1>
 
-      {/* 🔥 LIVE INDICATOR PRO */}
-      <div className="flex justify-center items-center gap-2 text-sm text-gray-500 mb-6">
+      {/* LIVE */}
+      <div className="flex justify-center items-center gap-2 text-sm text-gray-500 mb-4">
         <span className="relative flex h-3 w-3">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
         </span>
 
         <span className="font-medium text-green-600">LIVE</span>
-
-        <span>· última actualización:</span>
-
+        <span>·</span>
         <span className="font-mono">
           {lastUpdate ? lastUpdate.toLocaleTimeString() : "--:--:--"}
         </span>
       </div>
+
+      {/* 🔥 ALERT */}
+      {alert && (
+        <div className="mb-4 p-3 rounded bg-red-100 text-red-700 text-center font-medium">
+          {alert.message}
+        </div>
+      )}
 
       {/* SUMMARY */}
       {summary && (
@@ -126,9 +165,7 @@ function App() {
       {/* GRÁFICOS */}
       <div className="grid grid-cols-4 gap-6 mb-6">
         <div className="col-span-3 bg-white shadow rounded p-4">
-          <h2 className="font-semibold mb-2">
-            📈 Actividad
-          </h2>
+          <h2 className="font-semibold mb-2">📈 Actividad</h2>
 
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={activityData}>
@@ -141,6 +178,7 @@ function App() {
           </ResponsiveContainer>
         </div>
 
+        {/* DONUT */}
         <div className="col-span-1 bg-white shadow rounded p-4 flex items-center justify-center">
           <div className="relative">
             <PieChart width={220} height={220}>
@@ -149,10 +187,7 @@ function App() {
                 innerRadius={70}
                 outerRadius={100}
                 dataKey="value"
-              >
-                <Cell fill="#16a34a" />
-                <Cell fill="#dc2626" />
-              </Pie>
+              />
             </PieChart>
 
             {summary && (
