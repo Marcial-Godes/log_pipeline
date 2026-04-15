@@ -36,9 +36,9 @@ function App() {
       const logsData = await logsRes.json();
       const endpointsData = await endpointsRes.json();
 
-      setSummary(summaryData || null);
-      setLogs(Array.isArray(logsData) ? logsData : []);
-      setTopEndpoints(Array.isArray(endpointsData) ? endpointsData : []);
+      setSummary(summaryData);
+      setLogs(logsData);
+      setTopEndpoints(endpointsData);
 
       setLastUpdate(new Date());
     } catch (error) {
@@ -53,15 +53,13 @@ function App() {
   }, []);
 
   // 🔥 ANTICRASH
-  const safeSummary = summary || {
-    total: 0,
-    success: 0,
-    errors: 0,
-  };
+  if (!summary) {
+    return <div className="p-6 text-center">Cargando...</div>;
+  }
 
   const pieData = [
-    { name: "Correctos", value: safeSummary.success },
-    { name: "Errores", value: safeSummary.errors },
+    { name: "Correctos", value: summary.success },
+    { name: "Errores", value: summary.errors },
   ];
 
   const activityData = logs.slice(0, 20).map((log, i) => ({
@@ -106,28 +104,28 @@ function App() {
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-white shadow p-4 rounded text-center">
           <p>Total</p>
-          <p className="text-xl font-bold">{safeSummary.total}</p>
+          <p className="text-xl font-bold">{summary.total}</p>
         </div>
 
         <div className="bg-white shadow p-4 rounded text-center">
           <p>Errores</p>
           <p className="text-xl font-bold text-red-500">
-            {safeSummary.errors}
+            {summary.errors}
           </p>
         </div>
 
         <div className="bg-white shadow p-4 rounded text-center">
           <p>Correctos</p>
           <p className="text-xl font-bold text-green-600">
-            {safeSummary.success}
+            {summary.success}
           </p>
         </div>
 
         <div className="bg-white shadow p-4 rounded text-center">
           <p>% Error</p>
           <p className="text-xl font-bold text-orange-500">
-            {safeSummary.total > 0
-              ? ((safeSummary.errors / safeSummary.total) * 100).toFixed(1)
+            {summary.total > 0
+              ? ((summary.errors / summary.total) * 100).toFixed(1)
               : 0}
             %
           </p>
@@ -161,24 +159,24 @@ function App() {
                 innerRadius={70}
                 outerRadius={100}
                 dataKey="value"
+                key={summary.total} // 🔥 fuerza re-render
               >
                 <Cell fill="#16a34a" />
                 <Cell fill="#dc2626" />
               </Pie>
             </PieChart>
 
-            {/* CENTRO */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-sm">
               <span className="text-gray-400">Logs</span>
               <span className="text-xl font-bold">
-                {safeSummary.total}
+                {summary.total}
               </span>
               <div className="flex gap-2 mt-1">
                 <span className="text-green-600 text-xs">
-                  {safeSummary.success}
+                  {summary.success}
                 </span>
                 <span className="text-red-500 text-xs">
-                  {safeSummary.errors}
+                  {summary.errors}
                 </span>
               </div>
             </div>
