@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
 const API_URL = "https://log-pipeline.onrender.com";
 
@@ -8,7 +17,6 @@ function App() {
   const [topEndpoints, setTopEndpoints] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
 
-  // 🔥 filtros
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
@@ -36,7 +44,7 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // 🔥 FILTRADO PRO
+  // ===== FILTROS =====
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = log.endpoint
       .toLowerCase()
@@ -53,6 +61,27 @@ function App() {
     return matchesSearch && matchesStatus && matchesMethod;
   });
 
+  // ===== 🔥 TRANSFORMACIÓN PARA GRÁFICO =====
+  const chartData = Object.values(
+    logs.reduce((acc, log) => {
+      const time = new Date(log.timestamp)
+        .toLocaleTimeString()
+        .slice(0, 5); // HH:mm
+
+      if (!acc[time]) {
+        acc[time] = { time, success: 0, errors: 0 };
+      }
+
+      if (log.status_code >= 400) {
+        acc[time].errors += 1;
+      } else {
+        acc[time].success += 1;
+      }
+
+      return acc;
+    }, {})
+  );
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-4xl font-semibold text-center mb-2">
@@ -60,7 +89,7 @@ function App() {
       </h1>
 
       <p className="text-center text-sm text-gray-500 mb-6">
-        🟢 LIVE · última actualización: {lastUpdate}
+        🟢 LIVE · {lastUpdate}
       </p>
 
       {/* ===== SUMMARY ===== */}
@@ -72,14 +101,41 @@ function App() {
         </div>
       )}
 
+      {/* ===== 🔥 GRÁFICO ===== */}
+      <div className="bg-white shadow rounded p-4 mb-6">
+        <h2 className="font-semibold mb-4">Actividad en el tiempo</h2>
+
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="time" />
+            <YAxis />
+            <Tooltip />
+
+            <Line
+              type="monotone"
+              dataKey="success"
+              stroke="#16a34a"
+              strokeWidth={2}
+            />
+
+            <Line
+              type="monotone"
+              dataKey="errors"
+              stroke="#dc2626"
+              strokeWidth={2}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
       {/* ===== FILTROS ===== */}
       <div className="bg-white shadow rounded p-4 mb-6 flex gap-4 flex-wrap">
         <input
-          type="text"
           placeholder="Buscar endpoint..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border rounded px-3 py-2 text-sm w-48"
+          className="border rounded px-3 py-2 text-sm"
         />
 
         <select
@@ -87,10 +143,9 @@ function App() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="border rounded px-3 py-2 text-sm"
         >
-          <option value="">Todos los status</option>
+          <option value="">Status</option>
           <option value="200">200</option>
           <option value="400">400</option>
-          <option value="404">404</option>
           <option value="500">500</option>
         </select>
 
@@ -99,39 +154,20 @@ function App() {
           onChange={(e) => setMethodFilter(e.target.value)}
           className="border rounded px-3 py-2 text-sm"
         >
-          <option value="">Todos los métodos</option>
+          <option value="">Método</option>
           <option value="GET">GET</option>
           <option value="POST">POST</option>
-          <option value="PUT">PUT</option>
-          <option value="DELETE">DELETE</option>
         </select>
-
-        <button
-          onClick={() => {
-            setSearch("");
-            setStatusFilter("");
-            setMethodFilter("");
-          }}
-          className="bg-gray-100 px-3 py-2 rounded text-sm hover:bg-gray-200"
-        >
-          Reset
-        </button>
       </div>
 
       <div className="grid grid-cols-4 gap-6">
-        {/* LEFT */}
         <div className="col-span-1 bg-white shadow rounded p-4">
           <h2 className="font-semibold mb-2">Top Endpoints</h2>
-          <ul className="space-y-1 text-sm">
-            {topEndpoints.map((item, i) => (
-              <li key={i}>
-                {item.endpoint} → {item.count}
-              </li>
-            ))}
-          </ul>
+          {topEndpoints.map((item, i) => (
+            <p key={i}>{item.endpoint} → {item.count}</p>
+          ))}
         </div>
 
-        {/* RIGHT */}
         <div className="col-span-3 bg-white shadow rounded p-4 overflow-auto max-h-[400px]">
           <h2 className="font-semibold mb-2">
             Logs ({filteredLogs.length})
@@ -139,7 +175,7 @@ function App() {
 
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left border-b">
+              <tr className="border-b">
                 <th>Endpoint</th>
                 <th>Status</th>
                 <th>Método</th>
@@ -149,21 +185,13 @@ function App() {
 
             <tbody>
               {filteredLogs.map((log, i) => (
-                <tr key={i} className="border-b hover:bg-gray-50">
+                <tr key={i} className="border-b">
                   <td>{log.endpoint}</td>
-                  <td
-                    className={
-                      log.status_code >= 400
-                        ? "text-red-500 font-semibold"
-                        : "text-green-600"
-                    }
-                  >
+                  <td className={log.status_code >= 400 ? "text-red-500" : "text-green-600"}>
                     {log.status_code}
                   </td>
                   <td>{log.method}</td>
-                  <td className="text-xs text-gray-500">
-                    {new Date(log.timestamp).toLocaleTimeString()}
-                  </td>
+                  <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -174,7 +202,6 @@ function App() {
   );
 }
 
-/* ===== CARD ===== */
 function Card({ title, value, color = "text-gray-900" }) {
   return (
     <div className="bg-white shadow rounded p-4 text-center">
