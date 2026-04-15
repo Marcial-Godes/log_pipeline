@@ -22,9 +22,6 @@ function App() {
   const [statusFilter, setStatusFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
 
-  // =========================
-  // FETCH
-  // =========================
   useEffect(() => {
     fetch(`${API_URL}/logs/stats/summary`)
       .then((res) => res.json())
@@ -39,9 +36,18 @@ function App() {
       .then(setTopEndpoints);
   }, []);
 
-  // =========================
+  // =====================
+  // RESET FILTROS
+  // =====================
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("");
+    setMethodFilter("");
+  };
+
+  // =====================
   // FILTROS
-  // =========================
+  // =====================
   const filteredLogs = logs.filter((log) => {
     return (
       log.endpoint.toLowerCase().includes(search.toLowerCase()) &&
@@ -50,9 +56,9 @@ function App() {
     );
   });
 
-  // =========================
-  // CHART REAL (NO 0/1)
-  // =========================
+  // =====================
+  // CHART DATA
+  // =====================
   const grouped = {};
 
   logs.slice(0, 50).forEach((log) => {
@@ -62,24 +68,23 @@ function App() {
       grouped[time] = { time, errors: 0, success: 0 };
     }
 
-    if (log.status_code >= 400) {
-      grouped[time].errors++;
-    } else {
-      grouped[time].success++;
-    }
+    if (log.status_code >= 400) grouped[time].errors++;
+    else grouped[time].success++;
   });
 
   const chartData = Object.values(grouped);
 
-  // =========================
-  // PIE
-  // =========================
+  // =====================
+  // PIE DATA
+  // =====================
   const pieData = summary
     ? [
         { name: "Correctos", value: summary.success },
         { name: "Errores", value: summary.errors },
       ]
     : [];
+
+  const COLORS = ["#16a34a", "#dc2626"];
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -108,63 +113,89 @@ function App() {
       <div className="flex-1 p-6">
 
         <h1 className="text-3xl font-bold mb-2">Log Dashboard</h1>
-        <p className="text-sm text-gray-500 mb-4">
-          🟢 Sistema activo
-        </p>
-
-        {/* ALERT */}
-        {summary && summary.errors > summary.success && (
-          <div className="bg-red-100 border border-red-300 text-red-600 p-3 rounded mb-4">
-            ⚠ Alto porcentaje de errores (
-            {((summary.errors / summary.total) * 100).toFixed(1)}%)
-          </div>
-        )}
+        <p className="text-sm text-gray-500 mb-4">🟢 Sistema activo</p>
 
         {/* KPIs */}
         {summary && (
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <BigCard title="Total" value={summary.total} />
-            <BigCard title="Errores" value={summary.errors} color="text-red-500" />
-            <BigCard title="Correctos" value={summary.success} color="text-green-600" />
-            <BigCard
-              title="% Error"
-              value={((summary.errors / summary.total) * 100).toFixed(1) + "%"}
-              color="text-orange-500"
-            />
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <Card title="Total" value={summary.total} />
+            <Card title="Errores" value={summary.errors} color="text-red-500" />
+            <Card title="Correctos" value={summary.success} color="text-green-600" />
           </div>
         )}
 
-        {/* CHART */}
-        <div className="bg-white shadow rounded p-4 mb-6">
-          <h2 className="font-semibold mb-3">Actividad real</h2>
+        {/* CHART + PIE */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
 
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <XAxis dataKey="time" />
-              <YAxis />
-              <Tooltip />
-              <Line dataKey="success" stroke="#16a34a" />
-              <Line dataKey="errors" stroke="#dc2626" />
-            </LineChart>
-          </ResponsiveContainer>
+          {/* LINE */}
+          <div className="col-span-2 bg-white shadow rounded p-4">
+            <h2 className="font-semibold mb-3">Actividad</h2>
+
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={chartData}>
+                <XAxis dataKey="time" />
+                <YAxis />
+                <Tooltip />
+                <Line dataKey="success" stroke="#16a34a" />
+                <Line dataKey="errors" stroke="#dc2626" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* PIE */}
+          <div className="bg-white shadow rounded p-4 flex items-center justify-center">
+            {summary && (
+              <div className="relative">
+
+                <PieChart width={220} height={220}>
+                  <Pie
+                    data={pieData}
+                    innerRadius={70}
+                    outerRadius={100}
+                    dataKey="value"
+                  >
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+
+                {/* TEXTO CENTRO */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <p className="text-green-600 font-bold text-lg">
+                    ✔ {summary.success}
+                  </p>
+                  <p className="text-red-500 font-bold text-lg">
+                    ✖ {summary.errors}
+                  </p>
+                </div>
+
+              </div>
+            )}
+          </div>
         </div>
 
         {/* FILTROS */}
         <div className="flex gap-2 mb-4">
           <input
-            placeholder="Buscar..."
+            value={search}
+            placeholder="Buscar endpoint..."
             className="border p-2 rounded"
             onChange={(e) => setSearch(e.target.value)}
           />
+
           <select
+            value={statusFilter}
             className="border p-2 rounded"
-            onChange={(e) => setStatusFilter(Number(e.target.value))}
+            onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="">Status</option>
             <option value="400">Errores</option>
             <option value="200">Correctos</option>
           </select>
+
           <select
+            value={methodFilter}
             className="border p-2 rounded"
             onChange={(e) => setMethodFilter(e.target.value)}
           >
@@ -172,6 +203,14 @@ function App() {
             <option value="GET">GET</option>
             <option value="POST">POST</option>
           </select>
+
+          {/* BOTÓN LIMPIAR */}
+          <button
+            onClick={clearFilters}
+            className="bg-gray-800 text-white px-4 rounded"
+          >
+            Limpiar
+          </button>
         </div>
 
         {/* TABLE */}
@@ -189,34 +228,29 @@ function App() {
                 <th>Tiempo</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredLogs.map((log, i) => {
-                const isNew = i === 0;
 
-                return (
-                  <tr
-                    key={i}
-                    className={`border-b ${
-                      isNew ? "bg-yellow-50 animate-pulse" : ""
-                    }`}
+            <tbody>
+              {filteredLogs.map((log, i) => (
+                <tr key={i} className="border-b">
+                  <td>{log.endpoint}</td>
+
+                  <td
+                    className={
+                      log.status_code >= 400
+                        ? "text-red-500"
+                        : "text-green-600"
+                    }
                   >
-                    <td>{log.endpoint}</td>
-                    <td
-                      className={
-                        log.status_code >= 400
-                          ? "text-red-500"
-                          : "text-green-600"
-                      }
-                    >
-                      {log.status_code}
-                    </td>
-                    <td>{log.method}</td>
-                    <td>
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </td>
-                  </tr>
-                );
-              })}
+                    {log.status_code}
+                  </td>
+
+                  <td>{log.method}</td>
+
+                  <td>
+                    {new Date(log.timestamp).toLocaleTimeString()}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -226,11 +260,11 @@ function App() {
   );
 }
 
-function BigCard({ title, value, color = "text-gray-900" }) {
+function Card({ title, value, color = "text-gray-900" }) {
   return (
-    <div className="bg-white shadow-lg rounded-xl p-6 text-center">
-      <p className="text-sm text-gray-500 mb-2">{title}</p>
-      <p className={`text-3xl font-bold ${color}`}>{value}</p>
+    <div className="bg-white shadow rounded p-4 text-center">
+      <p className="text-sm text-gray-500">{title}</p>
+      <p className={`text-xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }
