@@ -5,38 +5,13 @@ from app.api.routes import logs, analytics
 from app.database import Base, engine, SessionLocal
 from app.models.log import Log
 
-import json
+# 🔥 IMPORT CORRECTO (FUERA DE MAIN)
+from app.websocket.manager import manager
 
 app = FastAPI()
 
 # =========================
-# WS MANAGER
-# =========================
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-        print("🟢 WS connected")
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-        print("🔴 WS disconnected")
-
-    async def broadcast(self, data: dict):
-        for connection in self.active_connections:
-            try:
-                await connection.send_text(json.dumps(data))
-            except:
-                pass
-
-
-manager = ConnectionManager()
-
-# =========================
-# WEBSOCKET ENDPOINT 🔥
+# WEBSOCKET ENDPOINT
 # =========================
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
