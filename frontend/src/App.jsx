@@ -23,7 +23,7 @@ function App() {
   const [methodFilter, setMethodFilter] = useState("");
 
   // =========================
-  // FETCH DATA
+  // FETCH
   // =========================
   useEffect(() => {
     fetch(`${API_URL}/logs/stats/summary`)
@@ -51,14 +51,29 @@ function App() {
   });
 
   // =========================
-  // CHART DATA
+  // CHART REAL (NO 0/1)
   // =========================
-  const chartData = logs.slice(0, 20).map((log, i) => ({
-    name: i,
-    errors: log.status_code >= 400 ? 1 : 0,
-    success: log.status_code < 400 ? 1 : 0,
-  }));
+  const grouped = {};
 
+  logs.slice(0, 50).forEach((log) => {
+    const time = new Date(log.timestamp).toLocaleTimeString();
+
+    if (!grouped[time]) {
+      grouped[time] = { time, errors: 0, success: 0 };
+    }
+
+    if (log.status_code >= 400) {
+      grouped[time].errors++;
+    } else {
+      grouped[time].success++;
+    }
+  });
+
+  const chartData = Object.values(grouped);
+
+  // =========================
+  // PIE
+  // =========================
   const pieData = summary
     ? [
         { name: "Correctos", value: summary.success },
@@ -67,48 +82,65 @@ function App() {
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 max-w-7xl mx-auto">
+    <div className="flex min-h-screen bg-gray-100">
 
-      {/* HEADER */}
-      <h1 className="text-4xl font-semibold text-center mb-2">
-        📊 Log Dashboard
-      </h1>
-      <p className="text-center text-sm text-gray-500 mb-6">
-        🟢 LIVE · actualización automática
-      </p>
+      {/* SIDEBAR */}
+      <div className="w-64 bg-white shadow-md p-4">
+        <h2 className="text-lg font-bold mb-4">📊 Panel</h2>
 
-      {/* ALERT */}
-      {summary && summary.errors > summary.success && (
-        <div className="bg-red-100 border border-red-300 text-red-600 p-3 rounded mb-6 text-center">
-          ⚠ Alto porcentaje de errores (
-          {((summary.errors / summary.total) * 100).toFixed(1)}%)
+        <ul className="space-y-2 text-sm">
+          <li className="font-semibold">Dashboard</li>
+          <li className="text-gray-500">Logs</li>
+          <li className="text-gray-500">Analytics</li>
+        </ul>
+
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold mb-2">Top Endpoints</h3>
+          {topEndpoints.map((e, i) => (
+            <div key={i} className="text-xs text-gray-600">
+              {e.endpoint} → {e.count}
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* KPI CARDS */}
-      {summary && (
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          <BigCard title="Total" value={summary.total} />
-          <BigCard title="Errores" value={summary.errors} color="text-red-500" />
-          <BigCard title="Correctos" value={summary.success} color="text-green-600" />
-        </div>
-      )}
+      {/* MAIN */}
+      <div className="flex-1 p-6">
 
-      {/* CHART + PIE */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
+        <h1 className="text-3xl font-bold mb-2">Log Dashboard</h1>
+        <p className="text-sm text-gray-500 mb-4">
+          🟢 Sistema activo
+        </p>
 
-        {/* LINE CHART */}
-        <div className="col-span-2 bg-white shadow rounded p-4">
-          <h2 className="font-semibold mb-2 text-lg">
-            📈 Actividad en tiempo real
-          </h2>
-          <p className="text-xs text-gray-400 mb-4">
-            Últimos eventos procesados
-          </p>
+        {/* ALERT */}
+        {summary && summary.errors > summary.success && (
+          <div className="bg-red-100 border border-red-300 text-red-600 p-3 rounded mb-4">
+            ⚠ Alto porcentaje de errores (
+            {((summary.errors / summary.total) * 100).toFixed(1)}%)
+          </div>
+        )}
+
+        {/* KPIs */}
+        {summary && (
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <BigCard title="Total" value={summary.total} />
+            <BigCard title="Errores" value={summary.errors} color="text-red-500" />
+            <BigCard title="Correctos" value={summary.success} color="text-green-600" />
+            <BigCard
+              title="% Error"
+              value={((summary.errors / summary.total) * 100).toFixed(1) + "%"}
+              color="text-orange-500"
+            />
+          </div>
+        )}
+
+        {/* CHART */}
+        <div className="bg-white shadow rounded p-4 mb-6">
+          <h2 className="font-semibold mb-3">Actividad real</h2>
 
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
-              <XAxis dataKey="name" />
+              <XAxis dataKey="time" />
               <YAxis />
               <Tooltip />
               <Line dataKey="success" stroke="#16a34a" />
@@ -117,91 +149,46 @@ function App() {
           </ResponsiveContainer>
         </div>
 
-        {/* PIE */}
-        <div className="bg-white shadow rounded p-4 flex flex-col items-center justify-center">
-          <PieChart width={250} height={250}>
-            <Pie
-              data={pieData}
-              innerRadius={70}
-              outerRadius={100}
-              dataKey="value"
-            >
-              <Cell fill="#16a34a" />
-              <Cell fill="#dc2626" />
-            </Pie>
-          </PieChart>
-
-          {summary && (
-            <div className="text-center -mt-28">
-              <p className="text-green-600 font-bold text-lg">
-                ✔ {summary.success}
-              </p>
-              <p className="text-red-500 font-bold text-lg">
-                ✖ {summary.errors}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* FILTROS */}
-      <div className="flex gap-3 mb-4">
-        <input
-          placeholder="Buscar endpoint..."
-          className="border p-2 rounded w-64"
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        <select
-          className="border p-2 rounded"
-          onChange={(e) => setStatusFilter(Number(e.target.value))}
-        >
-          <option value="">Status</option>
-          <option value="400">Errores</option>
-          <option value="200">Correctos</option>
-        </select>
-
-        <select
-          className="border p-2 rounded"
-          onChange={(e) => setMethodFilter(e.target.value)}
-        >
-          <option value="">Método</option>
-          <option value="GET">GET</option>
-          <option value="POST">POST</option>
-        </select>
-      </div>
-
-      {/* MAIN CONTENT */}
-      <div className="grid grid-cols-4 gap-6">
-
-        {/* SIDEBAR */}
-        <div className="col-span-1 bg-white shadow rounded p-4">
-          <h2 className="font-semibold mb-2">Top Endpoints</h2>
-          <ul className="space-y-1 text-sm">
-            {topEndpoints.map((item, i) => (
-              <li key={i}>
-                {item.endpoint} → {item.count}
-              </li>
-            ))}
-          </ul>
+        {/* FILTROS */}
+        <div className="flex gap-2 mb-4">
+          <input
+            placeholder="Buscar..."
+            className="border p-2 rounded"
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <select
+            className="border p-2 rounded"
+            onChange={(e) => setStatusFilter(Number(e.target.value))}
+          >
+            <option value="">Status</option>
+            <option value="400">Errores</option>
+            <option value="200">Correctos</option>
+          </select>
+          <select
+            className="border p-2 rounded"
+            onChange={(e) => setMethodFilter(e.target.value)}
+          >
+            <option value="">Método</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+          </select>
         </div>
 
         {/* TABLE */}
-        <div className="col-span-3 bg-white shadow rounded p-4 overflow-auto max-h-[500px]">
-          <h2 className="font-semibold mb-2">
+        <div className="bg-white shadow rounded p-4 overflow-auto max-h-[500px]">
+          <h2 className="mb-2 font-semibold">
             Logs ({filteredLogs.length})
           </h2>
 
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left border-b">
+              <tr className="border-b text-left">
                 <th>Endpoint</th>
                 <th>Status</th>
                 <th>Método</th>
                 <th>Tiempo</th>
               </tr>
             </thead>
-
             <tbody>
               {filteredLogs.map((log, i) => {
                 const isNew = i === 0;
@@ -209,24 +196,21 @@ function App() {
                 return (
                   <tr
                     key={i}
-                    className={`border-b transition ${
+                    className={`border-b ${
                       isNew ? "bg-yellow-50 animate-pulse" : ""
                     }`}
                   >
-                    <td className="font-medium">{log.endpoint}</td>
-
+                    <td>{log.endpoint}</td>
                     <td
                       className={
                         log.status_code >= 400
-                          ? "text-red-500 font-semibold"
+                          ? "text-red-500"
                           : "text-green-600"
                       }
                     >
                       {log.status_code}
                     </td>
-
                     <td>{log.method}</td>
-
                     <td>
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </td>
@@ -236,17 +220,15 @@ function App() {
             </tbody>
           </table>
         </div>
+
       </div>
     </div>
   );
 }
 
-// =========================
-// COMPONENTE KPI
-// =========================
 function BigCard({ title, value, color = "text-gray-900" }) {
   return (
-    <div className="bg-white shadow-lg rounded-xl p-6 text-center hover:scale-105 transition">
+    <div className="bg-white shadow-lg rounded-xl p-6 text-center">
       <p className="text-sm text-gray-500 mb-2">{title}</p>
       <p className={`text-3xl font-bold ${color}`}>{value}</p>
     </div>
