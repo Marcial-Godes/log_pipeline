@@ -18,15 +18,11 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [alerts, setAlerts] = useState([]);
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [methodFilter, setMethodFilter] = useState("");
-
+  const [lastErrors, setLastErrors] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(null);
 
-  // =========================
-  // FETCH DATA
-  // =========================
+  const [search, setSearch] = useState("");
+
   const fetchData = async () => {
     try {
       const [summaryRes, logsRes] = await Promise.all([
@@ -40,43 +36,32 @@ function App() {
       setSummary(summaryData);
       setLogs(logsData);
 
-      // 🔥 IMPORTANTE: trigger de alertas
-      await fetch(`${API_URL}/logs/stats/realtime-check`);
+      // 🔥 DETECCIÓN DE ALERTAS (SIN WS)
+      if (summaryData.errors > lastErrors) {
+        const diff = summaryData.errors - lastErrors;
 
+        setAlerts((prev) => [
+          {
+            id: Date.now(),
+            message: `+${diff} errores detectados`,
+          },
+          ...prev.slice(0, 4),
+        ]);
+      }
+
+      setLastErrors(summaryData.errors);
       setLastUpdate(new Date());
+
     } catch (error) {
       console.error("🔥 ERROR FETCH:", error);
     }
   };
 
-  // =========================
-  // WEBSOCKET
-  // =========================
-  useEffect(() => {
-    const ws = new WebSocket("wss://log-pipeline.onrender.com/ws");
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === "error") {
-        setAlerts((prev) => [
-          { id: Date.now(), message: data.message },
-          ...prev.slice(0, 4),
-        ]);
-      }
-    };
-
-    ws.onerror = () => console.log("WS error");
-    ws.onclose = () => console.log("WS closed");
-
-    return () => ws.close();
-  }, []);
-
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 3000); // 🔥 más rápido
     return () => clearInterval(interval);
-  }, []);
+  }, [lastErrors]);
 
   if (!summary) {
     return <div className="p-6 text-center">Cargando...</div>;
@@ -93,60 +78,48 @@ function App() {
     error: log.status_code >= 400 ? 1 : 0,
   }));
 
-  const filteredLogs = logs.filter((log) => {
-    return (
-      (log.endpoint || "").toLowerCase().includes(search.toLowerCase()) &&
-      (statusFilter ? log.status_code.toString() === statusFilter : true) &&
-      (methodFilter ? log.method === methodFilter : true)
-    );
-  });
+  const filteredLogs = logs.filter((log) =>
+    (log.endpoint || "").toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
 
-      {/* HEADER */}
-      <h1 className="text-4xl font-semibold text-center mb-2">
-        📊 Log Dashboard
-      </h1>
+      <h1 className="text-4xl text-center mb-2">📊 Log Dashboard</h1>
 
-      {/* ALERTAS */}
+      {/* 🔥 ALERTAS */}
       <div className="space-y-2 mb-4">
         {alerts.map((a) => (
-          <div key={a.id} className="bg-red-500 text-white p-2 rounded shadow">
+          <div key={a.id} className="bg-red-500 text-white p-2 rounded">
             🚨 {a.message}
           </div>
         ))}
       </div>
 
-      {/* LIVE */}
       <div className="text-center text-sm text-gray-500 mb-6">
         🟢 LIVE · {lastUpdate?.toLocaleTimeString()}
       </div>
 
       {/* SUMMARY */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white shadow p-4 rounded text-center">
+        <div className="bg-white shadow p-4 text-center">
           <p>Total</p>
-          <p className="text-xl font-bold">{summary.total}</p>
+          <p className="text-xl">{summary.total}</p>
         </div>
 
-        <div className="bg-white shadow p-4 rounded text-center">
+        <div className="bg-white shadow p-4 text-center">
           <p>Errores</p>
-          <p className="text-xl font-bold text-red-500">
-            {summary.errors}
-          </p>
+          <p className="text-xl text-red-500">{summary.errors}</p>
         </div>
 
-        <div className="bg-white shadow p-4 rounded text-center">
+        <div className="bg-white shadow p-4 text-center">
           <p>Correctos</p>
-          <p className="text-xl font-bold text-green-600">
-            {summary.success}
-          </p>
+          <p className="text-xl text-green-600">{summary.success}</p>
         </div>
 
-        <div className="bg-white shadow p-4 rounded text-center">
+        <div className="bg-white shadow p-4 text-center">
           <p>% Error</p>
-          <p className="text-xl font-bold text-orange-500">
+          <p className="text-xl text-orange-500">
             {((summary.errors / summary.total) * 100).toFixed(1)}%
           </p>
         </div>
@@ -154,7 +127,8 @@ function App() {
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-4 gap-6 mb-6">
-        <div className="col-span-3 bg-white shadow rounded p-4">
+
+        <div className="col-span-3 bg-white shadow p-4">
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={activityData}>
               <XAxis dataKey="name" />
@@ -166,7 +140,7 @@ function App() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white shadow rounded p-4 flex justify-center items-center">
+        <div className="bg-white shadow p-4 flex justify-center items-center">
           <PieChart width={200} height={200}>
             <Pie data={pieData} dataKey="value" innerRadius={60}>
               <Cell fill="#16a34a" />
@@ -176,32 +150,21 @@ function App() {
         </div>
       </div>
 
-      {/* FILTROS */}
-      <div className="flex gap-3 mb-4">
+      {/* FILTRO */}
+      <div className="mb-4">
         <input
           className="border p-2"
           placeholder="Buscar..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-
-        <button
-          onClick={() => {
-            setSearch("");
-            setStatusFilter("");
-            setMethodFilter("");
-          }}
-          className="bg-black text-white px-4"
-        >
-          Reset
-        </button>
       </div>
 
       {/* TABLA */}
-      <table className="w-full text-sm bg-white shadow rounded">
+      <table className="w-full bg-white shadow">
         <tbody>
           {filteredLogs.map((log, i) => (
-            <tr key={i} className="border-b">
+            <tr key={i}>
               <td>{log.endpoint}</td>
               <td>{log.status_code}</td>
               <td>{log.method}</td>
