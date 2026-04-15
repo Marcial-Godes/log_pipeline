@@ -31,14 +31,18 @@ function App() {
       .then(setLogs);
   }, []);
 
+  // =========================
   // RESET FILTROS
+  // =========================
   const clearFilters = () => {
     setSearch("");
     setStatusFilter("");
     setMethodFilter("");
   };
 
-  // FILTROS
+  // =========================
+  // FILTRADO
+  // =========================
   const filteredLogs = logs.filter((log) => {
     return (
       log.endpoint.toLowerCase().includes(search.toLowerCase()) &&
@@ -47,7 +51,9 @@ function App() {
     );
   });
 
-  // CHART DATA
+  // =========================
+  // AGRUPACIÓN PARA CHART
+  // =========================
   const grouped = {};
   logs.slice(0, 50).forEach((log) => {
     const time = new Date(log.timestamp).toLocaleTimeString();
@@ -62,7 +68,9 @@ function App() {
 
   const chartData = Object.values(grouped);
 
+  // =========================
   // PIE DATA
+  // =========================
   const pieData = summary
     ? [
         { name: "Correctos", value: summary.success },
@@ -73,13 +81,14 @@ function App() {
   const COLORS = ["#16a34a", "#dc2626"];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto bg-gray-100 min-h-screen">
 
+      {/* HEADER */}
       <h1 className="text-3xl font-bold mb-6 text-center">
         📊 Log Dashboard
       </h1>
 
-      {/* KPIs */}
+      {/* KPI CARDS */}
       {summary && (
         <div className="grid grid-cols-4 gap-4 mb-6">
           <Card title="Total" value={summary.total} />
@@ -100,13 +109,13 @@ function App() {
         <div className="col-span-2 bg-white shadow rounded p-4">
           <h2 className="mb-3 font-semibold">Actividad</h2>
 
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={280}>
             <LineChart data={chartData}>
               <XAxis dataKey="time" />
               <YAxis />
               <Tooltip />
-              <Line dataKey="success" stroke="#16a34a" />
-              <Line dataKey="errors" stroke="#dc2626" />
+              <Line dataKey="success" stroke="#16a34a" strokeWidth={2} />
+              <Line dataKey="errors" stroke="#dc2626" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -116,11 +125,11 @@ function App() {
           {summary && (
             <div className="relative">
 
-              <PieChart width={220} height={220}>
+              <PieChart width={260} height={260}>
                 <Pie
                   data={pieData}
-                  innerRadius={70}
-                  outerRadius={100}
+                  innerRadius={85}
+                  outerRadius={120}
                   dataKey="value"
                 >
                   {pieData.map((_, i) => (
@@ -129,14 +138,21 @@ function App() {
                 </Pie>
               </PieChart>
 
-              {/* TEXTO CENTRO */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-green-600 font-bold text-lg">
-                  ✔ {summary.success}
-                </span>
-                <span className="text-red-500 font-bold text-lg">
-                  ✖ {summary.errors}
-                </span>
+              {/* CENTRO DEL DONUT */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <p className="text-xs text-gray-500">Logs</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {summary.total}
+                </p>
+
+                <div className="flex gap-3 mt-1 text-sm">
+                  <span className="text-green-600 font-semibold">
+                    {summary.success}
+                  </span>
+                  <span className="text-red-500 font-semibold">
+                    {summary.errors}
+                  </span>
+                </div>
               </div>
 
             </div>
@@ -148,8 +164,8 @@ function App() {
       <div className="flex gap-2 mb-4">
         <input
           value={search}
-          placeholder="Buscar..."
-          className="border p-2 rounded"
+          placeholder="Buscar endpoint..."
+          className="border p-2 rounded w-64"
           onChange={(e) => setSearch(e.target.value)}
         />
 
@@ -173,16 +189,15 @@ function App() {
           <option value="POST">POST</option>
         </select>
 
-        {/* BOTÓN */}
         <button
           onClick={clearFilters}
-          className="bg-black text-white px-4 rounded"
+          className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded transition"
         >
-          Reset
+          Limpiar
         </button>
       </div>
 
-      {/* TABLE */}
+      {/* TABLA */}
       <div className="bg-white shadow rounded p-4 overflow-auto max-h-[500px]">
         <h2 className="mb-2 font-semibold">
           Logs ({filteredLogs.length})
