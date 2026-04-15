@@ -1,13 +1,55 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import logs, analytics
 from app.database import Base, engine, SessionLocal
 
-# modelos
 from app.models.log import Log
 
+import json
+
 app = FastAPI()
+
+# =========================
+# WEBSOCKET MANAGER 🔥
+# =========================
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        print(f"🟢 WS connected ({len(self.active_connections)})")
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+        print(f"🔴 WS disconnected ({len(self.active_connections)})")
+
+    async def broadcast(self, data: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(json.dumps(data))
+            except:
+                pass
+
+
+manager = ConnectionManager()
+
+
+# =========================
+# WEBSOCKET ENDPOINT
+# =========================
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+
+    try:
+        while True:
+            # mantenemos la conexión viva
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 
 # =========================
@@ -23,7 +65,6 @@ def startup_event():
 
     db = SessionLocal()
 
-    # 🌱 seed si está vacío
     if db.query(Log).count() == 0:
         print("🌱 Seeding database...")
 
@@ -44,7 +85,7 @@ def startup_event():
 
 
 # =========================
-# HEALTH CHECK 🔥
+# HEALTH CHECK
 # =========================
 @app.get("/health")
 def health():
