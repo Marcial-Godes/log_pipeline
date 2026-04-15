@@ -4,7 +4,6 @@ import {
   Pie,
   Cell,
   Tooltip,
-  Legend,
 } from "recharts";
 
 const API_URL = "https://log-pipeline.onrender.com";
@@ -55,6 +54,7 @@ function App() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+      {/* HEADER */}
       <h1 className="text-4xl font-semibold text-center mb-2">
         📊 Log Dashboard
       </h1>
@@ -72,7 +72,7 @@ function App() {
           <Card title="Errores" value={summary.errors} color="text-red-500" />
           <Card title="Correctos" value={summary.success} color="text-green-600" />
 
-          {/* CHART */}
+          {/* CHART LIMPIO */}
           <div className="bg-white shadow rounded p-4 flex items-center justify-center">
             <PieChart width={220} height={220}>
               <Pie
@@ -89,7 +89,7 @@ function App() {
                   <Cell key={i} fill={COLORS[i]} />
                 ))}
 
-                {/* 🔥 TEXTO CENTRAL CORRECTO */}
+                {/* TEXTO CENTRAL */}
                 <text
                   x="50%"
                   y="45%"
@@ -103,7 +103,7 @@ function App() {
                   x="50%"
                   y="52%"
                   textAnchor="middle"
-                  style={{ fontSize: "16px", fontWeight: "bold", fill: "#22c55e" }}
+                  style={{ fontSize: "18px", fontWeight: "bold", fill: "#22c55e" }}
                 >
                   {summary.success}
                 </text>
@@ -121,14 +121,13 @@ function App() {
                   x="50%"
                   y="70%"
                   textAnchor="middle"
-                  style={{ fontSize: "16px", fontWeight: "bold", fill: "#ef4444" }}
+                  style={{ fontSize: "18px", fontWeight: "bold", fill: "#ef4444" }}
                 >
                   {summary.errors}
                 </text>
               </Pie>
 
               <Tooltip />
-              <Legend />
             </PieChart>
           </div>
         </div>
