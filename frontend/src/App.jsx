@@ -7,6 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  BarChart,
+  Bar,
 } from "recharts";
 
 const API_URL = "https://log-pipeline.onrender.com";
@@ -46,37 +48,32 @@ function App() {
 
   // ===== FILTROS =====
   const filteredLogs = logs.filter((log) => {
-    const matchesSearch = log.endpoint
-      .toLowerCase()
-      .includes(search.toLowerCase());
-
-    const matchesStatus = statusFilter
-      ? log.status_code === Number(statusFilter)
-      : true;
-
-    const matchesMethod = methodFilter
-      ? log.method === methodFilter
-      : true;
+    const matchesSearch = log.endpoint.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter ? log.status_code === Number(statusFilter) : true;
+    const matchesMethod = methodFilter ? log.method === methodFilter : true;
 
     return matchesSearch && matchesStatus && matchesMethod;
   });
 
-  // ===== 🔥 TRANSFORMACIÓN PARA GRÁFICO =====
+  // ===== ERROR RATE =====
+  const errorRate = summary
+    ? ((summary.errors / summary.total) * 100).toFixed(1)
+    : 0;
+
+  // ===== ALERTA =====
+  const showAlert = summary && errorRate > 30;
+
+  // ===== CHART DATA =====
   const chartData = Object.values(
     logs.reduce((acc, log) => {
-      const time = new Date(log.timestamp)
-        .toLocaleTimeString()
-        .slice(0, 5); // HH:mm
+      const time = new Date(log.timestamp).toLocaleTimeString().slice(0, 5);
 
       if (!acc[time]) {
         acc[time] = { time, success: 0, errors: 0 };
       }
 
-      if (log.status_code >= 400) {
-        acc[time].errors += 1;
-      } else {
-        acc[time].success += 1;
-      }
+      if (log.status_code >= 400) acc[time].errors++;
+      else acc[time].success++;
 
       return acc;
     }, {})
@@ -84,24 +81,33 @@ function App() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+
       <h1 className="text-4xl font-semibold text-center mb-2">
         📊 Log Dashboard
       </h1>
 
-      <p className="text-center text-sm text-gray-500 mb-6">
+      <p className="text-center text-sm text-gray-500 mb-4">
         🟢 LIVE · {lastUpdate}
       </p>
 
-      {/* ===== SUMMARY ===== */}
-      {summary && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card title="Total" value={summary.total} />
-          <Card title="Errores" value={summary.errors} color="text-red-500" />
-          <Card title="Correctos" value={summary.success} color="text-green-600" />
+      {/* 🚨 ALERTA */}
+      {showAlert && (
+        <div className="bg-red-100 border border-red-300 text-red-700 p-3 rounded mb-6 text-center">
+          🚨 Alto porcentaje de errores ({errorRate}%)
         </div>
       )}
 
-      {/* ===== 🔥 GRÁFICO ===== */}
+      {/* ===== SUMMARY ===== */}
+      {summary && (
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <Card title="Total" value={summary.total} />
+          <Card title="Errores" value={summary.errors} color="text-red-500" />
+          <Card title="Correctos" value={summary.success} color="text-green-600" />
+          <Card title="% Error" value={`${errorRate}%`} color="text-orange-500" />
+        </div>
+      )}
+
+      {/* ===== GRÁFICO TIEMPO ===== */}
       <div className="bg-white shadow rounded p-4 mb-6">
         <h2 className="font-semibold mb-4">Actividad en el tiempo</h2>
 
@@ -112,20 +118,23 @@ function App() {
             <YAxis />
             <Tooltip />
 
-            <Line
-              type="monotone"
-              dataKey="success"
-              stroke="#16a34a"
-              strokeWidth={2}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="errors"
-              stroke="#dc2626"
-              strokeWidth={2}
-            />
+            <Line type="monotone" dataKey="success" stroke="#16a34a" strokeWidth={2} />
+            <Line type="monotone" dataKey="errors" stroke="#dc2626" strokeWidth={2} />
           </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ===== GRÁFICO ENDPOINTS ===== */}
+      <div className="bg-white shadow rounded p-4 mb-6">
+        <h2 className="font-semibold mb-4">Top Endpoints</h2>
+
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={topEndpoints}>
+            <XAxis dataKey="endpoint" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="count" fill="#3b82f6" />
+          </BarChart>
         </ResponsiveContainer>
       </div>
 
@@ -160,43 +169,40 @@ function App() {
         </select>
       </div>
 
-      <div className="grid grid-cols-4 gap-6">
-        <div className="col-span-1 bg-white shadow rounded p-4">
-          <h2 className="font-semibold mb-2">Top Endpoints</h2>
-          {topEndpoints.map((item, i) => (
-            <p key={i}>{item.endpoint} → {item.count}</p>
-          ))}
-        </div>
+      {/* ===== TABLE ===== */}
+      <div className="bg-white shadow rounded p-4 overflow-auto max-h-[400px]">
+        <h2 className="font-semibold mb-2">
+          Logs ({filteredLogs.length})
+        </h2>
 
-        <div className="col-span-3 bg-white shadow rounded p-4 overflow-auto max-h-[400px]">
-          <h2 className="font-semibold mb-2">
-            Logs ({filteredLogs.length})
-          </h2>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b">
+              <th>Endpoint</th>
+              <th>Status</th>
+              <th>Método</th>
+              <th>Tiempo</th>
+            </tr>
+          </thead>
 
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th>Endpoint</th>
-                <th>Status</th>
-                <th>Método</th>
-                <th>Tiempo</th>
+          <tbody>
+            {filteredLogs.map((log, i) => (
+              <tr
+                key={i}
+                className={`border-b ${
+                  log.status_code >= 400 ? "bg-red-50" : ""
+                }`}
+              >
+                <td>{log.endpoint}</td>
+                <td className={log.status_code >= 400 ? "text-red-500" : "text-green-600"}>
+                  {log.status_code}
+                </td>
+                <td>{log.method}</td>
+                <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
               </tr>
-            </thead>
-
-            <tbody>
-              {filteredLogs.map((log, i) => (
-                <tr key={i} className="border-b">
-                  <td>{log.endpoint}</td>
-                  <td className={log.status_code >= 400 ? "text-red-500" : "text-green-600"}>
-                    {log.status_code}
-                  </td>
-                  <td>{log.method}</td>
-                  <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
