@@ -11,8 +11,6 @@ def create_log(db: Session, log: LogCreate):
     print("🔥 create_log ejecutado")
 
     try:
-        print(f"📥 Log recibido: {log.dict()}")
-
         new_log = Log(
             endpoint=log.endpoint,
             method=log.method,
@@ -26,10 +24,9 @@ def create_log(db: Session, log: LogCreate):
         print("💾 guardado en DB")
 
     except Exception as e:
-        print("❌ ERROR guardando en DB:", e)
+        print("❌ ERROR:", e)
         db.rollback()
 
-    # métricas
     if log.status_code and log.status_code >= 400:
         metrics.log_received("ERROR")
     else:
@@ -43,28 +40,19 @@ def create_logs_batch(db: Session, logs: List[LogCreate]):
 
     try:
         for log in logs:
-            print(f"📥 Log batch: {log.dict()}")
-
             new_log = Log(
                 endpoint=log.endpoint,
                 method=log.method,
                 status_code=log.status_code,
                 timestamp=log.timestamp or datetime.utcnow(),
             )
-
             db.add(new_log)
 
         db.commit()
-        print("💾 batch guardado en DB")
+        print("💾 batch guardado")
 
     except Exception as e:
-        print("❌ ERROR guardando batch:", e)
+        print("❌ ERROR:", e)
         db.rollback()
-
-    for log in logs:
-        if log.status_code and log.status_code >= 400:
-            metrics.log_received("ERROR")
-        else:
-            metrics.log_received("INFO")
 
     return {"status": "stored"}
