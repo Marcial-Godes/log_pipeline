@@ -1,7 +1,6 @@
 import requests
 import random
 import time
-from datetime import datetime, UTC
 
 URL = "http://127.0.0.1:8000/logs/"
 
@@ -13,16 +12,13 @@ while True:
         "endpoint": random.choice(endpoints),
         "method": random.choice(methods),
 
-        "status_code": random.choices(
-            [200, 201, 400, 401, 404, 500],
-            weights=[30, 10, 20, 10, 15, 15]
-        )[0],
+        # 🔥 distribución de errores
+        "status_code": 200,
 
-        "response_time": round(random.uniform(0.1, 1.5), 3),
-        "ip": "127.0.0.1",
 
-        # 🔥 CLAVE
-        "timestamp": datetime.now(UTC).isoformat()
+
+        "response_time": round(random.uniform(0.1, 0.4), 3),
+        "ip": "127.0.0.1"
     }
 
     try:
@@ -31,4 +27,4 @@ while True:
     except Exception as e:
         print("ERROR:", e)
 
-    time.sleep(0.2)
+    time.sleep(0.1)

@@ -2,59 +2,123 @@ import json
 import time
 from datetime import datetime, UTC
 
-from app.database import SessionLocal
+import redis
+
+from app.core.database import SessionLocal
+from app.core.settings import settings
 from app.models.log import Log
-from app.core.redis_client import redis_client
 
 QUEUE_NAME = "log_queue"
+CHANNEL_NAME = "logs_channel"
+
+redis_client = redis.Redis.from_url(
+    settings.REDIS_URL,
+    decode_responses=True
+)
+
+
+def parse_timestamp(ts):
+    if not ts:
+        return datetime.now(UTC)
+
+    if ts.endswith("Z"):
+        ts = ts.replace("Z", "+00:00")
+
+    return datetime.fromisoformat(ts)
+
+
+def get_minute_key(dt):
+    return dt.strftime("%Y-%m-%dT%H:%M")
 
 
 def process_log(data):
     db = SessionLocal()
 
     try:
-        print(f"📥 Procesando log: {data}")
+        ts = parse_timestamp(data.get("timestamp"))
+        minute = get_minute_key(ts)
 
-        if not data.get("timestamp"):
-            data["timestamp"] = datetime.now(UTC)
+        endpoint = data.get("endpoint")
+        status = data.get("status_code")
+        response_time = data.get("response_time")
 
-        log = Log(**data)
+        log = Log(
+            endpoint=endpoint,
+            method=data.get("method"),
+            status_code=status,
+            response_time=response_time,
+            timestamp=ts,
+            ip=data.get("ip"),
+            user_agent=data.get("user_agent"),
+        )
 
         db.add(log)
         db.commit()
-        db.refresh(log)
 
-        print(f"✅ Log guardado en DB ID={log.id}")
+        # =========================
+        # 🔥 METRICS REDIS (CLAVE)
+        # =========================
+
+        pipe = redis_client.pipeline()
+
+        # global
+        pipe.incr(f"metrics:{minute}:total")
+
+        if status >= 400:
+            pipe.incr(f"metrics:{minute}:errors")
+
+        # por endpoint
+        pipe.hincrby(f"metrics:{minute}:endpoints", endpoint, 1)
+
+        if status >= 400:
+            pipe.hincrby(f"metrics:{minute}:errors_by_endpoint", endpoint, 1)
+
+        pipe.hincrbyfloat(
+            f"metrics:{minute}:response_time_sum",
+            endpoint,
+            float(response_time)
+        )
+
+        pipe.hincrby(
+            f"metrics:{minute}:response_time_count",
+            endpoint,
+            1
+        )
+
+        pipe.execute()
+
+        # WS
+        redis_client.publish(
+            CHANNEL_NAME,
+            json.dumps({"type": "new_log", "data": data})
+        )
+
+        print(f"✅ Guardado + métricas: {endpoint} {status}")
 
     except Exception as e:
-        print("❌ ERROR guardando en DB:")
-        print(e)
+        print("❌ Error procesando log:", e)
         db.rollback()
-
     finally:
         db.close()
 
 
-def run_worker():
+def worker():
     print("🚀 Worker started...")
 
     while True:
-        item = redis_client.blpop(QUEUE_NAME, timeout=5)
+        try:
+            item = redis_client.blpop(QUEUE_NAME, timeout=5)
 
-        if item:
-            _, log_data = item
+            if item:
+                _, raw = item
+                data = json.loads(raw)
 
-            print(f"📦 Mensaje recibido: {log_data}")
-
-            try:
-                data = json.loads(log_data)
                 process_log(data)
-            except Exception as e:
-                print("❌ ERROR procesando mensaje:")
-                print(e)
-        else:
+
+        except Exception as e:
+            print("❌ Worker error:", e)
             time.sleep(1)
 
 
 if __name__ == "__main__":
-    run_worker()
+    worker()

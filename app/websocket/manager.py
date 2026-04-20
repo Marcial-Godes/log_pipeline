@@ -17,11 +17,18 @@ class ConnectionManager:
         print("🔴 WS disconnected")
 
     async def broadcast(self, data: dict):
+        dead_connections = []
+
         for connection in self.active_connections:
             try:
                 await connection.send_text(json.dumps(data))
-            except:
-                pass
+            except Exception as e:
+                print(f"❌ WS send error: {e}")
+                dead_connections.append(connection)
+
+        # 🔥 limpiar conexiones muertas
+        for conn in dead_connections:
+            self.disconnect(conn)
 
 
 manager = ConnectionManager()

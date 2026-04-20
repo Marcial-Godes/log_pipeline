@@ -2,11 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.database import get_db
+from app.core.database import get_db
 from app.models.log import Log
-from app.websocket.manager import manager
 
-# ✅ IMPORTANTE: prefijo correcto
 router = APIRouter(prefix="/logs/stats", tags=["analytics"])
 
 
@@ -75,13 +73,13 @@ def status_distribution(db: Session = Depends(get_db)):
 
 
 # =========================
-# REALTIME CHECK
+# REALTIME CHECK (polling fallback)
 # =========================
 last_error_count = 0
 
 
 @router.get("/realtime-check")
-async def realtime_check(db: Session = Depends(get_db)):
+def realtime_check(db: Session = Depends(get_db)):
     global last_error_count
 
     errors = (
@@ -91,12 +89,10 @@ async def realtime_check(db: Session = Depends(get_db)):
         or 0
     )
 
-    if errors > last_error_count:
-        await manager.broadcast({
-            "type": "error",
-            "message": f"Errores totales: {errors}",
-        })
-
+    increased = errors > last_error_count
     last_error_count = errors
 
-    return {"errors": errors}
+    return {
+        "errors": errors,
+        "alert": increased
+    }

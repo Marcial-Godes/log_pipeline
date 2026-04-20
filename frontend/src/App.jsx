@@ -1,188 +1,542 @@
 import { useEffect, useState } from "react";
+import "./App.css";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
+  LineChart,
+  Line,
+  CartesianGrid,
+  Legend,
+  ReferenceLine,
+  Brush,
 } from "recharts";
 
-const API_URL = "https://log-pipeline.onrender.com";
-const WS_URL = "wss://log-pipeline.onrender.com/ws";
-
 function App() {
-  const [summary, setSummary] = useState(null);
-  const [logs, setLogs] = useState([]);
-  const [lastUpdate, setLastUpdate] = useState(null);
-  const [wsConnected, setWsConnected] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [slowData, setSlowData] = useState([]);
+  const [timeSeries, setTimeSeries] = useState([]);
 
-  // 🔥 FETCH (fallback)
-  const fetchData = async () => {
-    try {
-      const [summaryRes, logsRes] = await Promise.all([
-        fetch(`${API_URL}/logs/stats/summary`),
-        fetch(`${API_URL}/logs/recent`),
-      ]);
+  const [selectedEndpoint, setSelectedEndpoint] = useState(
+    localStorage.getItem("endpoint") || "ALL"
+  );
 
-      const summaryData = await summaryRes.json();
-      const logsData = await logsRes.json();
+  const [selectedMinutes, setSelectedMinutes] = useState(
+    Number(localStorage.getItem("minutes")) || 5
+  );
 
-      setSummary(summaryData);
-      setLogs(logsData);
-      setLastUpdate(new Date());
-    } catch (err) {
-      console.error("FETCH ERROR:", err);
-    }
+  const [errorCount, setErrorCount] = useState(0);
+  const [errorRate, setErrorRate] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [avgResponseTime, setAvgResponseTime] = useState(0);
+
+  const [showLatency, setShowLatency] = useState(true);
+  const [showErrors, setShowErrors] = useState(true);
+
+  const endpointsList = [
+    "ALL",
+    ...Array.from(new Set(events.map((e) => e.endpoint))),
+  ];
+
+  useEffect(() => {
+    localStorage.setItem("minutes", selectedMinutes);
+  }, [selectedMinutes]);
+
+  useEffect(() => {
+    localStorage.setItem("endpoint", selectedEndpoint);
+  }, [selectedEndpoint]);
+
+  const detectClient = (ua) => {
+    if (!ua) return { label: "Unknown", icon: "❓" };
+
+    const lower = ua.toLowerCase();
+
+    if (lower.includes("postman")) return { label: "Postman", icon: "🧪" };
+    if (lower.includes("thunder")) return { label: "Thunder", icon: "🧪" };
+    if (lower.includes("curl")) return { label: "Bot", icon: "🤖" };
+    if (lower.includes("mozilla")) return { label: "Browser", icon: "🌐" };
+    if (lower.includes("mobile")) return { label: "Mobile", icon: "📱" };
+
+    return { label: "Other", icon: "🖥" };
+  };
+
+  const timeAgo = (timestamp) => {
+    if (!timestamp) return "";
+
+    const now = new Date();
+    const past = new Date(timestamp);
+    const diff = Math.floor((now - past) / 1000);
+
+    if (diff < 60) return `${diff}s`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+
+    return `${Math.floor(diff / 86400)}d`;
+  };
+
+  const formatTime = (ts) => {
+    if (!ts) return "";
+    return new Date(ts).toLocaleTimeString();
+  };
+
+  const formatTimeSafe = (value) => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (!isNaN(d)) return d.toLocaleTimeString();
+    return value;
+  };
+
+  const getSystemHealth = () => {
+    if (errorRate > 12 || avgResponseTime > 1.2) return "critical";
+    if (errorRate > 5 || avgResponseTime > 0.6) return "warning";
+    return "healthy";
+  };
+
+  // 🔥 BOTONES TEST
+  const sendTestLog = async (type = "ok") => {
+    const payload =
+      type === "error"
+        ? {
+            endpoint: "/test-error",
+            method: "GET",
+            status_code: 500,
+            response_time: 1.5,
+          }
+        : {
+            endpoint: "/test-ok",
+            method: "GET",
+            status_code: 200,
+            response_time: 0.2,
+          };
+
+    await fetch("http://localhost:8000/logs/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  };
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || !payload.length) return null;
+
+    return (
+      <div
+        style={{
+          background: "rgba(15, 23, 42, 0.95)",
+          border: "1px solid rgba(148, 163, 184, 0.15)",
+          padding: "10px 14px",
+          borderRadius: "10px",
+          color: "#e2e8f0",
+          backdropFilter: "blur(6px)",
+          boxShadow: "0 8px 25px rgba(0,0,0,0.35)",
+          minWidth: "160px",
+        }}
+      >
+        <div style={{ fontSize: "11px", color: "#94a3b8", marginBottom: "4px" }}>
+          🕒 {formatTimeSafe(label)}
+        </div>
+
+        {payload.map((p, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontWeight: "600",
+            }}
+          >
+            <span>
+              {p.dataKey === "avg_response_time" ? "Latency" : p.dataKey}
+            </span>
+
+            <span>
+              {p.dataKey === "errors" ? p.value : p.value.toFixed(3)}
+              {p.dataKey === "avg_response_time" ? " s" : ""}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   useEffect(() => {
-    fetchData();
+    const fetchAlerts = async () => {
+      const res = await fetch("http://localhost:8000/alerts");
+      const data = await res.json();
 
-    let ws;
-    let isWsAlive = false;
+      const formatted = data.map((a) => ({
+        type: a.status,
+        endpoint: a.endpoint || "system",
+        value: a.value,
+        timestamp: a.timestamp,
+      }));
 
-    try {
-      ws = new WebSocket(WS_URL);
-
-      ws.onopen = () => {
-        console.log("🟢 WS conectado");
-        isWsAlive = true;
-        setWsConnected(true);
-      };
-
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-
-        if (msg.type === "new_log") {
-          const log = msg.data;
-
-          setLogs((prev) => [log, ...prev.slice(0, 49)]);
-
-          setSummary((prev) => {
-            if (!prev) return prev;
-
-            const isError = log.status_code >= 400;
-
-            return {
-              total: prev.total + 1,
-              success: isError ? prev.success : prev.success + 1,
-              errors: isError ? prev.errors + 1 : prev.errors,
-            };
-          });
-
-          setLastUpdate(new Date());
-        }
-      };
-
-      ws.onerror = () => {
-        console.log("⚠️ WS error → fallback polling");
-        isWsAlive = false;
-        setWsConnected(false);
-      };
-
-      ws.onclose = () => {
-        console.log("🔴 WS cerrado → fallback polling");
-        isWsAlive = false;
-        setWsConnected(false);
-      };
-    } catch (e) {
-      console.log("WS no disponible");
-      setWsConnected(false);
-    }
-
-    // 🔥 FALLBACK polling si WS falla
-    const interval = setInterval(() => {
-      if (!isWsAlive) {
-        fetchData();
-      }
-    }, 5000);
-
-    return () => {
-      if (ws) ws.close();
-      clearInterval(interval);
+      setAlerts(formatted);
     };
+
+    fetchAlerts();
   }, []);
 
-  if (!summary) return <div className="p-6">Cargando...</div>;
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:8000/ws");
 
-  const pieData = [
-    { name: "Correctos", value: summary.success },
-    { name: "Errores", value: summary.errors },
-  ];
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
 
-  const activityData = logs.slice(0, 20).map((log, i) => ({
-    name: i,
-    success: log.status_code < 400 ? 1 : 0,
-    error: log.status_code >= 400 ? 1 : 0,
-  }));
+      if (msg.type === "new_log") {
+        setEvents((prev) => [msg.data, ...prev.slice(0, 99)]);
+      }
+
+      if (msg.type === "alert" || msg.type === "recovery") {
+        setAlerts((prev) => [
+          {
+            type: msg.type,
+            endpoint: msg.data.endpoint || "system",
+            value:
+              msg.data.avg_response_time ??
+              msg.data.error_rate ??
+              0,
+            timestamp: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
+      }
+    };
+
+    return () => ws.close();
+  }, []);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      let url = `http://localhost:8000/metrics/window?minutes=${selectedMinutes}`;
+
+      if (selectedEndpoint !== "ALL") {
+        url += `&endpoint=${selectedEndpoint}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      setSlowData(data.slowest_endpoints || []);
+      setErrorCount(data.errors || 0);
+      setErrorRate(data.error_rate || 0);
+      setTotal(data.total || 0);
+      setAvgResponseTime(data.avg_response_time_global || 0);
+
+      let url2 = `http://localhost:8000/metrics/timeseries?minutes=${selectedMinutes * 2}`;
+
+      if (selectedEndpoint !== "ALL") {
+        url2 += `&endpoint=${selectedEndpoint}`;
+      }
+
+      const res2 = await fetch(url2);
+      const data2 = await res2.json();
+      setTimeSeries(data2.series || []);
+    };
+
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 3000);
+    return () => clearInterval(interval);
+  }, [selectedEndpoint, selectedMinutes]);
+
+  const getErrorRateColor = (rate) => {
+    if (rate > 12) return "#ef4444";
+    if (rate > 5) return "#f59e0b";
+    return "#22c55e";
+  };
+
+  const getLatencyColor = (value) => {
+    if (value > 1.2) return "#ef4444";
+    if (value > 0.6) return "#f59e0b";
+    return "#22c55e";
+  };
+
+  const getBarColor = (value) => {
+    if (value > 0.8) return "#ef4444";
+    if (value > 0.5) return "#f59e0b";
+    return "#22c55e";
+  };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-4xl text-center mb-2">
-        📊 Log Dashboard
-      </h1>
+    <div className="container">
+      <h1 style={{ marginBottom: "40px" }}>🚀 Log Dashboard</h1>
 
-      <div className="text-center text-sm mb-6">
-        {wsConnected ? "🟢 LIVE (WebSocket)" : "🟡 Polling mode"}
-        {" · "}
-        {lastUpdate?.toLocaleTimeString()}
+      {/* HEADER MÁS RESPIRADO */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "24px",
+          marginBottom: "30px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          ⏱ Ventana:
+          <select
+            value={selectedMinutes}
+            onChange={(e) => setSelectedMinutes(Number(e.target.value))}
+            style={{ marginLeft: "8px" }}
+          >
+            <option value={5}>5 min</option>
+            <option value={10}>10 min</option>
+            <option value={30}>30 min</option>
+            <option value={60}>60 min</option>
+          </select>
+        </div>
+
+        <div>
+          📍 Endpoint:
+          <select
+            value={selectedEndpoint}
+            onChange={(e) => setSelectedEndpoint(e.target.value)}
+            style={{ marginLeft: "8px" }}
+          >
+            {endpointsList.map((ep) => (
+              <option key={ep} value={ep}>
+                {ep}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          {getSystemHealth() === "healthy" && (
+            <span style={{
+              background: "#22C55E26",
+              color: "#22c55e",
+              padding: "6px 14px",
+              borderRadius: "999px",
+              border: "1px solid #22C55E4D",
+            }}>
+              🟢 Healthy
+            </span>
+          )}
+          {getSystemHealth() === "warning" && (
+            <span style={{
+              background: "#F59E0B26",
+              color: "#f59e0b",
+              padding: "6px 14px",
+              borderRadius: "999px",
+              border: "1px solid #F59E0B4D",
+            }}>
+              🟡 Warning
+            </span>
+          )}
+          {getSystemHealth() === "critical" && (
+            <span style={{
+              background: "rgba(239,68,68,0.15)",
+              color: "#ef4444",
+              padding: "6px 14px",
+              borderRadius: "999px",
+              border: "1px solid rgba(239,68,68,0.3)",
+            }}>
+              🔴 Critical
+            </span>
+          )}
+        </div>
+                  <button
+  onClick={() => sendTestLog("ok")}
+  style={{
+    background: "#22c55e",
+    color: "#022c22",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "6px",
+    fontWeight: "600",
+    cursor: "pointer",
+  }}
+>
+  + OK
+</button>
+
+<button
+  onClick={() => sendTestLog("error")}
+  style={{
+    background: "#ef4444",
+    color: "white",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "6px",
+    fontWeight: "600",
+    cursor: "pointer",
+    
+  }}
+>
+  + Error
+</button>
       </div>
 
-      {/* SUMMARY */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white shadow p-4 text-center">
-          <p>Total</p>
-          <p className="text-xl font-bold">{summary.total}</p>
+      {/* MÁS ESPACIO ENTRE BLOQUES */}
+      <div style={{ marginBottom: "30px" }} className="grid">
+        <div className="panel">
+          <h2>📊 Total Eventos</h2>
+          <div className="metric">{total}</div>
         </div>
 
-        <div className="bg-white shadow p-4 text-center">
-          <p>Errores</p>
-          <p className="text-xl font-bold text-red-500">
-            {summary.errors}
-          </p>
+        <div className="panel">
+          <h2>❌ Errores</h2>
+          <div className="metric" style={{ color: "#ef4444" }}>
+            {errorCount}
+          </div>
         </div>
 
-        <div className="bg-white shadow p-4 text-center">
-          <p>Correctos</p>
-          <p className="text-xl font-bold text-green-600">
-            {summary.success}
-          </p>
-        </div>
-
-        <div className="bg-white shadow p-4 text-center">
-          <p>% Error</p>
-          <p className="text-xl font-bold text-orange-500">
-            {((summary.errors / summary.total) * 100).toFixed(1)}%
-          </p>
+        <div className="panel">
+          <h2>⏱ Avg Response Time</h2>
+          <div
+            className="metric"
+            style={{ color: getLatencyColor(avgResponseTime) }}
+          >
+            {avgResponseTime}s
+          </div>
         </div>
       </div>
 
-      {/* GRÁFICOS */}
-      <div className="grid grid-cols-4 gap-6">
-        <div className="col-span-3 bg-white shadow rounded p-4">
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={activityData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Line dataKey="success" stroke="#16a34a" />
-              <Line dataKey="error" stroke="#dc2626" />
-            </LineChart>
-          </ResponsiveContainer>
+      <div style={{ marginBottom: "30px" }} className="panel error-rate-panel">
+        <h2>⚠️ Error Rate</h2>
+        <div
+          className="metric"
+          style={{ color: getErrorRateColor(errorRate) }}
+        >
+          {errorRate}%
+        </div>
+      </div>
+
+      {/* RESTO SIN TOCAR */}
+      <div className="grid">
+        <div className="panel events-panel">
+          <h2>📡 Eventos</h2>
+          {events.map((e, i) => {
+            const isError = e.status_code >= 400;
+            const client = detectClient(e.user_agent);
+
+            return (
+              <div
+                key={i}
+                className="item"
+                style={{
+                  borderLeft: `4px solid ${
+                    isError ? "#ef4444" : "#22c55e"
+                  }`,
+                  paddingLeft: "8px",
+                }}
+              >
+                <div>
+                  <strong>
+                    {e.method} {e.endpoint}
+                  </strong>{" "}
+                  → {e.status_code}
+                </div>
+
+                <div style={{ fontSize: "12px", opacity: 0.8 }}>
+                  ⏱ {e.response_time?.toFixed(3)}s | 🕒{" "}
+                  {formatTime(e.timestamp)}
+                </div>
+
+                <div style={{ fontSize: "12px", opacity: 0.6 }}>
+                  🌐 {e.ip} | {client.icon} {client.label}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="bg-white shadow rounded p-4 flex justify-center items-center">
-          <PieChart width={200} height={200}>
-            <Pie data={pieData} dataKey="value" innerRadius={60}>
-              <Cell fill="#16a34a" />
-              <Cell fill="#dc2626" />
-            </Pie>
-          </PieChart>
+        <div className="panel alerts-panel">
+          <h2>🚨 Alertas</h2>
+          {alerts.map((a, i) => (
+            <div key={i} className={`item ${a.type}`}>
+              <div>
+                {a.type === "alert"
+                  ? "🚨 High error rate"
+                  : "🟢 Recovered"}
+              </div>
+
+              <div style={{ fontSize: "12px", opacity: 0.7 }}>
+                {a.endpoint} • {a.value}% • hace {timeAgo(a.timestamp)}
+              </div>
+            </div>
+          ))}
         </div>
+      </div>
+
+      <div className="panel">
+        <h2>📈 Evolución</h2>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={timeSeries}>
+            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+
+            <XAxis dataKey="minute" tickFormatter={formatTimeSafe} />
+
+            <YAxis yAxisId="left" />
+            <YAxis yAxisId="right" orientation="right" />
+
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+
+            {showLatency && (
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="avg_response_time"
+                stroke="#3b82f6"
+                strokeWidth={2.5}
+              />
+            )}
+
+            {showErrors && (
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="errors"
+                stroke="#ef4444"
+                strokeWidth={2.5}
+              />
+            )}
+
+            <Brush
+              dataKey="minute"
+              height={8}
+              stroke="#334155"
+              travellerWidth={8}
+              fill="#0f172a"
+              tickFormatter={() => ""}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="panel">
+        <h2>🐢 Endpoints lentos</h2>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={slowData}>
+            <XAxis dataKey="endpoint" />
+            <YAxis />
+
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ fill: "transparent" }}
+            />
+
+            <Bar dataKey="avg_response_time">
+              {slowData.map((entry, index) => (
+                <Cell
+                  key={index}
+                  fill={getBarColor(entry.avg_response_time)}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

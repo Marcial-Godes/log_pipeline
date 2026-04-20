@@ -29,7 +29,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/logs_db
       REDIS_URL: redis://redis:6379/0
     ports:
-      - "8000:8000"
+      - "8000:10000"
 
   worker:
     build: .
@@ -38,6 +38,18 @@ services:
       - postgres
       - redis
     command: ["python", "-u", "worker.py"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/logs_db
+      REDIS_URL: redis://redis:6379/0
+
+  # 🔥 NUEVO: alert worker separado
+  alert_worker:
+    build: .
+    container_name: logs_alert_worker
+    depends_on:
+      - postgres
+      - redis
+    command: ["python", "-u", "alert_worker.py"]
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/logs_db
       REDIS_URL: redis://redis:6379/0

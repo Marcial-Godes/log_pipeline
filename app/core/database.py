@@ -1,16 +1,13 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+from app.core.settings import settings
 
-if not DATABASE_URL:
-    raise Exception("❌ DATABASE_URL not set")
 
-print("🔥 USING DATABASE:", DATABASE_URL)
+print("🔥 USING DATABASE:", settings.DATABASE_URL)
 
 engine = create_engine(
-    DATABASE_URL,
+    settings.DATABASE_URL,
     pool_pre_ping=True,
 )
 
@@ -21,3 +18,11 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

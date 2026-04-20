@@ -1,5 +1,4 @@
 from app.core.database import SessionLocal
-from app.models.raw_log import RawLog
 
 
 def check_columns():

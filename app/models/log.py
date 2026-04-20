@@ -12,4 +12,4 @@ class Log(Base):
     status_code = Column(Integer, nullable=False)
     response_time = Column(Float, nullable=False)
     ip = Column(String, nullable=False)
-    user_agent = Column(String, nullable=True)  # 👈 CLAVE
+    user_agent = Column(String, nullable=True)

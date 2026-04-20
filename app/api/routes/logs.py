@@ -1,53 +1,38 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
+from datetime import datetime, UTC
+import json
 
-from app.database import get_db
-from app.models.log import Log
-from app.websocket.manager import manager
+from app.core.database import get_db
+from app.core.redis_client import redis_client
+from app.schemas.log import LogCreateSchema
 
 router = APIRouter(prefix="/logs", tags=["logs"])
 
+QUEUE_NAME = "log_queue"
 
-# =========================
-# CREATE LOG
-# =========================
+
 @router.post("/")
-async def create_log(log: dict, db: Session = Depends(get_db)):
-    new_log = Log(**log)
-    db.add(new_log)
-    db.commit()
-    db.refresh(new_log)
+async def create_log(
+    log: LogCreateSchema,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    log_dict = log.model_dump()
 
-    # 🔥 enviar por websocket
-    await manager.broadcast({
-        "type": "new_log",
-        "data": {
-            "endpoint": new_log.endpoint,
-            "method": new_log.method,
-            "status_code": new_log.status_code,
-        }
-    })
+    # ✅ convertir datetime -> string SIEMPRE
+    if isinstance(log_dict.get("timestamp"), datetime):
+        log_dict["timestamp"] = log_dict["timestamp"].isoformat()
 
-    return new_log
+    # timestamp por defecto
+    if not log_dict.get("timestamp"):
+        log_dict["timestamp"] = datetime.now(UTC).isoformat()
 
+    # enrich
+    log_dict["ip"] = request.client.host if request.client else "unknown"
+    log_dict["user_agent"] = request.headers.get("user-agent", "unknown")
 
-# =========================
-# GET RECENT LOGS
-# =========================
-@router.get("/recent")
-def get_recent_logs(db: Session = Depends(get_db)):
-    logs = (
-        db.query(Log)
-        .order_by(Log.id.desc())
-        .limit(50)
-        .all()
-    )
+    # ✅ async correctamente
+    await redis_client.rpush(QUEUE_NAME, json.dumps(log_dict))
 
-    return [
-        {
-            "endpoint": log.endpoint,
-            "method": log.method,
-            "status_code": log.status_code,
-        }
-        for log in logs
-    ]
+    return {"status": "queued"}
