@@ -1,5 +1,6 @@
 import json
 import asyncio
+import threading
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,12 +14,16 @@ from app.core.settings import settings
 from app.api.routes import logs, analytics, metrics
 from app.api.routes.alerts import router as alerts_router
 
+# 🔥 IMPORTANTE
+from worker import worker as run_worker
+from alert_worker import run as run_alert_worker
+
 
 app = FastAPI()
 
 CHANNEL_NAME = "logs_channel"
 
-# ✅ Redis desde settings (NO hardcode)
+# Redis async (para API / WS)
 redis_client = redis.from_url(
     settings.REDIS_URL,
     decode_responses=True
@@ -50,7 +55,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 # =========================
-# 📡 REDIS LISTENER (mejorado)
+# 📡 REDIS LISTENER
 # =========================
 async def redis_listener():
     while True:
@@ -74,15 +79,30 @@ async def redis_listener():
 
         except Exception as e:
             print("❌ Redis listener error:", e)
-            await asyncio.sleep(2)  # 🔥 retry real
+            await asyncio.sleep(2)
+
+
+# =========================
+# 🔥 START WORKERS (KEY)
+# =========================
+def start_background_workers():
+    print("🚀 Starting background workers...")
+
+    # worker principal
+    threading.Thread(target=run_worker, daemon=True).start()
+
+    # alert worker
+    threading.Thread(target=run_alert_worker, daemon=True).start()
 
 
 @app.on_event("startup")
 async def startup_event():
-    # ⚠️ mantenemos esto de momento, luego lo quitamos si quieres
     Base.metadata.create_all(bind=engine)
 
     asyncio.create_task(redis_listener())
+
+    # 🔥 CLAVE
+    start_background_workers()
 
 
 # =========================
@@ -90,7 +110,7 @@ async def startup_event():
 # =========================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # luego lo cerraremos
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
