@@ -72,6 +72,7 @@ def metrics_timeseries(
         Metric.timestamp_minute,
         func.sum(Metric.total).label("total"),
         func.sum(Metric.errors).label("errors"),
+        func.avg(Metric.avg_response_time).label("avg_response_time"),
     ).filter(
         Metric.timestamp_minute >= since
     ).group_by(

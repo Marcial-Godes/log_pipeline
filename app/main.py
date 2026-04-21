@@ -4,6 +4,7 @@ import threading
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 import redis.asyncio as redis
 
@@ -30,9 +31,9 @@ redis_client = redis.from_url(
 )
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
-    return {"message": "Log Pipeline API running"}
+    return JSONResponse(content={"message": "Log Pipeline API running"})
 
 
 @app.get("/health")
