@@ -16,6 +16,14 @@ import {
   Brush,
 } from "recharts";
 
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+const WS_URL = API_URL
+  .replace("https://", "wss://")
+  .replace("http://", "ws://");
+
+
 function App() {
   const [events, setEvents] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -114,7 +122,7 @@ function App() {
             response_time: 0.2,
           };
 
-    await fetch("http://localhost:8000/logs/", {
+    await fetch(`${API_URL}/logs/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -168,7 +176,7 @@ function App() {
 
   useEffect(() => {
     const fetchAlerts = async () => {
-      const res = await fetch("http://localhost:8000/alerts");
+      const res = await fetch(`${API_URL}/alerts`);
       const data = await res.json();
 
       const formatted = data.map((a) => ({
@@ -185,7 +193,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8000/ws");
+    const ws = new WebSocket(`${WS_URL}/ws`);
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -215,7 +223,7 @@ function App() {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      let url = `http://localhost:8000/metrics/window?minutes=${selectedMinutes}`;
+      let url = `${API_URL}/metrics/window?minutes=${selectedMinutes}`;
 
       if (selectedEndpoint !== "ALL") {
         url += `&endpoint=${selectedEndpoint}`;
@@ -230,7 +238,7 @@ function App() {
       setTotal(data.total || 0);
       setAvgResponseTime(data.avg_response_time_global || 0);
 
-      let url2 = `http://localhost:8000/metrics/timeseries?minutes=${selectedMinutes * 2}`;
+      let url2 = `${API_URL}/metrics/timeseries?minutes=${selectedMinutes * 2}`;
 
       if (selectedEndpoint !== "ALL") {
         url2 += `&endpoint=${selectedEndpoint}`;
