@@ -414,7 +414,7 @@ function App() {
           className="metric"
           style={{ color: getErrorRateColor(errorRate) }}
         >
-          {errorRate}%
+          {Math.round(errorRate)}%
         </div>
       </div>
 
