@@ -95,9 +95,14 @@ def process_log(data):
         # 💾 PERSISTENCIA (CLAVE)
         # =========================
 
-        # recuperar valores actuales desde Redis
-        total = int(redis_client.get(f"metrics:{minute}:total") or 0)
-        errors = int(redis_client.get(f"metrics:{minute}:errors") or 0)
+# métricas POR ENDPOINT (correcto)
+total = int(
+    redis_client.hget(f"metrics:{minute}:endpoints", endpoint) or 0
+)
+
+errors = int(
+    redis_client.hget(f"metrics:{minute}:errors_by_endpoint", endpoint) or 0
+)
 
         time_sum = float(
             redis_client.hget(f"metrics:{minute}:response_time_sum", endpoint) or 0
