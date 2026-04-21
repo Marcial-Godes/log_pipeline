@@ -507,6 +507,7 @@ function App() {
       strokeWidth={2.5}
       dot={false}
       name="Latency"
+      dot={{ r: 4 }}
     />
     </>
   )}
