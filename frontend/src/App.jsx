@@ -521,7 +521,7 @@ function App() {
             />
 
             <ReferenceLine
-              y={1.2}
+              y={1.1}
               yAxisId="left"
               stroke="#ef4444"
               strokeDasharray="4 4"
