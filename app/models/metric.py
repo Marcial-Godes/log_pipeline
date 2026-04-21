@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from fastapi import Depends
 
+
 @router.get("/db-test")
 def test_db(db: Session = Depends(get_db)):
     data = db.query(Metric).order_by(Metric.id.desc()).limit(5).all()
