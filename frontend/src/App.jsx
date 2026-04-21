@@ -505,9 +505,9 @@ function App() {
             <Legend />
           
           <YAxis
-          yAxisId="left"
-          domain={[0, 2]}
-          tickFormatter={(v) => `${v}s`}
+            yAxisId="left"
+            domain={[0, 2]}
+            tickFormatter={(v) => `${v}s`}
           />
           
           <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.12} />
