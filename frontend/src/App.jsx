@@ -484,7 +484,10 @@ function App() {
 
             <XAxis dataKey="minute" tickFormatter={formatTimeSafe} />
 
-            <YAxis yAxisId="left" />
+            <YAxis
+              yAxisId="left"
+              tickFormatter={(v) => `${v}s`}
+            />
             <YAxis yAxisId="right" orientation="right" />
 
             <Tooltip content={<CustomTooltip />} />
