@@ -60,16 +60,6 @@ function App() {
     localStorage.setItem("endpoint", selectedEndpoint);
   }, [selectedEndpoint]);
 
-  const coloredSeries = timeSeries.map((d) => ({
-    ...d,
-    latency_ok: d.avg_response_time <= 0.6 ? d.avg_response_time : null,
-    latency_warn:
-      d.avg_response_time > 0.6 && d.avg_response_time <= 1.1
-        ? d.avg_response_time
-        : null,
-    latency_crit: d.avg_response_time > 1.1 ? d.avg_response_time : null,
-  }));
-
   const detectClient = (ua) => {
     if (!ua) return { label: "Unknown", icon: "❓" };
 
@@ -485,7 +475,7 @@ function App() {
         <h2>📈 Evolución</h2>
 
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={coloredSeries}>
+          <LineChart data={timeSeries}>
   {/* ZONAS */}
   <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.05} />
   <ReferenceArea yAxisId="left" y1={0.6} y2={1.1} fill="#f59e0b" fillOpacity={0.05} />
@@ -509,35 +499,15 @@ function App() {
   {/* LATENCY */}
   {showLatency && (
     <>
-      <Line
-        yAxisId="left"
-        type="monotone"
-        dataKey="latency_ok"
-        stroke="#22c55e"
-        strokeWidth={2.5}
-        dot={false}
-        name="Latency (OK)"
-      />
-
-      <Line
-        yAxisId="left"
-        type="monotone"
-        dataKey="latency_warn"
-        stroke="#f59e0b"
-        strokeWidth={2.5}
-        dot={false}
-        name="Latency (Warning)"
-      />
-
-      <Line
-        yAxisId="left"
-        type="monotone"
-        dataKey="latency_crit"
-        stroke="#ef4444"
-        strokeWidth={2.5}
-        dot={false}
-        name="Latency (Critical)"
-      />
+    <Line
+  yAxisId="left"
+  type="monotone"
+  dataKey="avg_response_time"
+  stroke="#60a5fa"
+  strokeWidth={2.5}
+  dot={false}
+  name="Latency"
+/>
     </>
   )}
 
