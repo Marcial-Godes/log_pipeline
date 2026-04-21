@@ -83,15 +83,12 @@ async def redis_listener():
 
 
 # =========================
-# 🔥 START WORKERS (KEY)
+# 🔥 START WORKERS
 # =========================
 def start_background_workers():
     print("🚀 Starting background workers...")
 
-    # worker principal
     threading.Thread(target=run_worker, daemon=True).start()
-
-    # alert worker
     threading.Thread(target=run_alert_worker, daemon=True).start()
 
 
