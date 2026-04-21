@@ -3,10 +3,12 @@ import time
 from datetime import datetime, UTC
 
 import redis
+from sqlalchemy import select
 
 from app.core.database import SessionLocal
 from app.core.settings import settings
 from app.models.log import Log
+from app.models.metric import Metric  # 🔥 NUEVO
 
 QUEUE_NAME = "log_queue"
 CHANNEL_NAME = "logs_channel"
@@ -42,6 +44,9 @@ def process_log(data):
         status = data.get("status_code")
         response_time = data.get("response_time")
 
+        # =========================
+        # 🧾 GUARDAR LOG
+        # =========================
         log = Log(
             endpoint=endpoint,
             method=data.get("method"),
@@ -55,25 +60,23 @@ def process_log(data):
         db.add(log)
         db.commit()
 
+        # =========================
+        # 📊 REDIS METRICS
+        # =========================
         pipe = redis_client.pipeline()
 
-        # total siempre
         pipe.incr(f"metrics:{minute}:total")
 
-        # ✅ clasificación correcta
         if 200 <= status < 300:
             pipe.incr(f"metrics:{minute}:success")
         elif status >= 400:
             pipe.incr(f"metrics:{minute}:errors")
 
-        # endpoints
         pipe.hincrby(f"metrics:{minute}:endpoints", endpoint, 1)
 
-        # errores por endpoint
         if status >= 400:
             pipe.hincrby(f"metrics:{minute}:errors_by_endpoint", endpoint, 1)
 
-        # response time
         pipe.hincrbyfloat(
             f"metrics:{minute}:response_time_sum",
             endpoint,
@@ -88,12 +91,59 @@ def process_log(data):
 
         pipe.execute()
 
+        # =========================
+        # 💾 PERSISTENCIA (CLAVE)
+        # =========================
+
+        # recuperar valores actuales desde Redis
+        total = int(redis_client.get(f"metrics:{minute}:total") or 0)
+        errors = int(redis_client.get(f"metrics:{minute}:errors") or 0)
+
+        time_sum = float(
+            redis_client.hget(f"metrics:{minute}:response_time_sum", endpoint) or 0
+        )
+
+        time_count = int(
+            redis_client.hget(f"metrics:{minute}:response_time_count", endpoint) or 0
+        )
+
+        avg = (time_sum / time_count) if time_count > 0 else 0
+
+        minute_dt = datetime.strptime(minute, "%Y-%m-%dT%H:%M").replace(tzinfo=UTC)
+
+        # buscar si ya existe
+        existing = db.execute(
+            select(Metric).where(
+                Metric.timestamp_minute == minute_dt,
+                Metric.endpoint == endpoint
+            )
+        ).scalar_one_or_none()
+
+        if existing:
+            existing.total = total
+            existing.errors = errors
+            existing.avg_response_time = round(avg, 3)
+        else:
+            metric = Metric(
+                timestamp_minute=minute_dt,
+                endpoint=endpoint,
+                total=total,
+                errors=errors,
+                avg_response_time=round(avg, 3),
+            )
+            db.add(metric)
+
+        db.commit()
+
+        # =========================
+        # 📡 WEBSOCKET
+        # =========================
         redis_client.publish(
             CHANNEL_NAME,
             json.dumps({"type": "new_log", "data": data})
         )
 
-        print(f"✅ Guardado + métricas: {endpoint} {status}")
+        print(f"✅ Guardado + persistido: {endpoint} {status}")
 
     except Exception as e:
         print("❌ Error procesando log:", e)
@@ -102,7 +152,6 @@ def process_log(data):
         db.close()
 
 
-# 🔥 ESTA ES LA FUNCIÓN QUE IMPORTAMOS
 def worker():
     print("🚀 Worker started...")
 
