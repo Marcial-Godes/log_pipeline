@@ -493,29 +493,29 @@ function App() {
 
             <Tooltip content={<CustomTooltip />} />
             <Legend />
-            <ReferenceArea
-  yAxisId="left"
-  y1={0}
-  y2={0.6}
-  fill="#22c55e"
-  fillOpacity={0.05}
-/>
+          <ReferenceArea
+            yAxisId="left"
+            y1={0}
+            y2={0.6}
+            fill="#22c55e"
+            fillOpacity={0.05}
+          />
 
-<ReferenceArea
-  yAxisId="left"
-  y1={0.6}
-  y2={1.2}
-  fill="#f59e0b"
-  fillOpacity={0.05}
-/>
+          <ReferenceArea
+            yAxisId="left"
+            y1={0.6}
+            y2={1.1}
+            fill="#f59e0b"
+            fillOpacity={0.05}
+          />
 
-<ReferenceArea
-  yAxisId="left"
-  y1={1.2}
-  y2={5}
-  fill="#ef4444"
-  fillOpacity={0.05}
-/>
+          <ReferenceArea
+            yAxisId="left"
+            y1={1.1}
+            y2={5}
+            fill="#ef4444"
+            fillOpacity={0.05}
+          />
 
             {showLatency && (
               <Line
