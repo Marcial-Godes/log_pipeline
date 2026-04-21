@@ -32,7 +32,7 @@ def test_db(db: Session = Depends(get_db)):
 
 
 # =========================
-# 📊 WINDOW (agregado simple)
+# 📊 WINDOW (FIX COMPLETO)
 # =========================
 @router.get("/window")
 def metrics_window(
@@ -41,20 +41,56 @@ def metrics_window(
 ):
     since = datetime.now(UTC) - timedelta(minutes=minutes)
 
-    data = db.query(
+    # 🔢 Totales globales
+    totals = db.query(
         func.sum(Metric.total).label("total"),
         func.sum(Metric.errors).label("errors"),
     ).filter(
         Metric.timestamp_minute >= since
     ).first()
 
-    total = data.total or 0
-    errors = data.errors or 0
+    total = totals.total or 0
+    errors = totals.errors or 0
+
+    # 📊 Avg global REAL (ponderado)
+    weighted = db.query(
+        func.sum(Metric.avg_response_time * Metric.total).label("weighted_sum"),
+        func.sum(Metric.total).label("total_sum"),
+    ).filter(
+        Metric.timestamp_minute >= since
+    ).first()
+
+    if weighted.total_sum and weighted.total_sum > 0:
+        avg_global = weighted.weighted_sum / weighted.total_sum
+    else:
+        avg_global = 0
+
+    # 🐢 Endpoints más lentos
+    slow = db.query(
+        Metric.endpoint,
+        func.avg(Metric.avg_response_time).label("avg_response_time")
+    ).filter(
+        Metric.timestamp_minute >= since
+    ).group_by(
+        Metric.endpoint
+    ).order_by(
+        func.avg(Metric.avg_response_time).desc()
+    ).limit(5).all()
+
+    slowest = [
+        {
+            "endpoint": s.endpoint,
+            "avg_response_time": float(s.avg_response_time or 0)
+        }
+        for s in slow
+    ]
 
     return {
         "total": int(total),
         "errors": int(errors),
-        "error_rate": round((errors / total * 100), 2) if total > 0 else 0
+        "error_rate": round((errors / total * 100), 2) if total > 0 else 0,
+        "avg_response_time_global": round(avg_global, 3),
+        "slowest_endpoints": slowest
     }
 
 
