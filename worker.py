@@ -57,16 +57,23 @@ def process_log(data):
 
         pipe = redis_client.pipeline()
 
+        # total siempre
         pipe.incr(f"metrics:{minute}:total")
 
-        if status >= 400:
+        # ✅ clasificación correcta
+        if 200 <= status < 300:
+            pipe.incr(f"metrics:{minute}:success")
+        elif status >= 400:
             pipe.incr(f"metrics:{minute}:errors")
 
+        # endpoints
         pipe.hincrby(f"metrics:{minute}:endpoints", endpoint, 1)
 
+        # errores por endpoint
         if status >= 400:
             pipe.hincrby(f"metrics:{minute}:errors_by_endpoint", endpoint, 1)
 
+        # response time
         pipe.hincrbyfloat(
             f"metrics:{minute}:response_time_sum",
             endpoint,
