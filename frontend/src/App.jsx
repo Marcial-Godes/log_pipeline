@@ -60,6 +60,16 @@ function App() {
     localStorage.setItem("endpoint", selectedEndpoint);
   }, [selectedEndpoint]);
 
+  const coloredSeries = timeSeries.map((d) => ({
+    ...d,
+    latency_ok: d.avg_response_time <= 0.6 ? d.avg_response_time : null,
+    latency_warn:
+      d.avg_response_time > 0.6 && d.avg_response_time <= 1.1
+        ? d.avg_response_time
+        : null,
+    latency_crit: d.avg_response_time > 1.1 ? d.avg_response_time : null,
+  }));
+
   const detectClient = (ua) => {
     if (!ua) return { label: "Unknown", icon: "❓" };
 
@@ -480,7 +490,7 @@ function App() {
         <h2>📈 Evolución</h2>
 
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={timeSeries}>
+          <LineChart data={coloredSeries}>
             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
 
             <XAxis dataKey="minute" tickFormatter={formatTimeSafe} />
@@ -505,13 +515,34 @@ function App() {
           <ReferenceArea yAxisId="left" y1={1.1} y2={2} fill="#ef4444" fillOpacity={0.12} />
 
             {showLatency && (
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="avg_response_time"
-                stroke="#3b82f6"
-                strokeWidth={2.5}
-              />
+              <>
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="latency_ok"
+                  stroke="#22c55e"
+                  strokeWidth={2.5}
+                  dot={false}
+                />
+
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="latency_warn"
+                  stroke="#f59e0b"
+                  strokeWidth={2.5}
+                  dot={false}
+                />
+
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="latency_crit"
+                  stroke="#ef4444"
+                  strokeWidth={2.5}
+                  dot={false}
+                />
+              </>
             )}
 
             {showErrors && (
