@@ -519,6 +519,7 @@ function App() {
         strokeWidth={2.5}
         dot={false}
         name="Latency (OK)"
+        connectNulls
       />
 
       <Line
@@ -529,6 +530,7 @@ function App() {
         strokeWidth={2.5}
         dot={false}
         name="Latency (Warning)"
+        connectNulls
       />
 
       <Line
@@ -539,6 +541,7 @@ function App() {
         strokeWidth={2.5}
         dot={false}
         name="Latency (Critical)"
+        connectNulls
       />
     </>
   )}
