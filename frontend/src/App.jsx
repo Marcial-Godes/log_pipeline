@@ -487,8 +487,8 @@ function App() {
 
   <YAxis
     yAxisId="left"
-    domain={[0, 2]}
-    tickFormatter={(v) => `${v}s`}
+    domain={["auto", "auto"]}
+    tickFormatter={(v) => `${v.toFixed(2)}s`}
   />
 
   <YAxis yAxisId="right" orientation="right" />
@@ -500,14 +500,14 @@ function App() {
   {showLatency && (
     <>
     <Line
-  yAxisId="left"
-  type="monotone"
-  dataKey="avg_response_time"
-  stroke="#60a5fa"
-  strokeWidth={2.5}
-  dot={false}
-  name="Latency"
-/>
+      yAxisId="left"
+      type="monotone"
+      dataKey="avg_response_time"
+      stroke="#60a5fa"
+      strokeWidth={2.5}
+      dot={false}
+      name="Latency"
+    />
     </>
   )}
 
