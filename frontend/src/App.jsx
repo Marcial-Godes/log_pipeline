@@ -143,47 +143,42 @@ function App() {
   };
 
   const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload || !payload.length) return null;
+  if (!active || !payload || !payload.length) return null;
 
-    return (
-      <div
-        style={{
-          background: "rgba(15, 23, 42, 0.95)",
-          border: "1px solid rgba(148, 163, 184, 0.15)",
-          padding: "10px 14px",
-          borderRadius: "10px",
-          color: "#e2e8f0",
-          backdropFilter: "blur(6px)",
-          boxShadow: "0 8px 25px rgba(0,0,0,0.35)",
-          minWidth: "160px",
-        }}
-      >
-        <div style={{ fontSize: "11px", color: "#94a3b8", marginBottom: "4px" }}>
-          🕒 {formatTimeSafe(label)}
-        </div>
-
-        {payload.map((p, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontWeight: "600",
-            }}
-          >
-            <span>
-              {p.dataKey === "avg_response_time" ? "Latency" : p.dataKey}
-            </span>
-
-            <span>
-              {p.dataKey === "errors" ? p.value : p.value.toFixed(3)}
-              {p.dataKey === "avg_response_time" ? " s" : ""}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
+  const labelMap = {
+    latency_ok: "Latency",
+    latency_warn: "Latency",
+    latency_crit: "Latency",
+    errors: "Errors",
   };
+
+  return (
+    <div
+      style={{
+        background: "rgba(15, 23, 42, 0.95)",
+        border: "1px solid rgba(148, 163, 184, 0.15)",
+        padding: "10px 14px",
+        borderRadius: "10px",
+        color: "#e2e8f0",
+      }}
+    >
+      <div style={{ fontSize: "11px", color: "#94a3b8" }}>
+        🕒 {formatTimeSafe(label)}
+      </div>
+
+      {payload.map((p, i) => (
+        <div key={i} style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>{labelMap[p.dataKey] || p.dataKey}</span>
+          <span>
+            {p.dataKey === "errors"
+              ? p.value
+              : `${p.value.toFixed(3)}s`}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -491,94 +486,101 @@ function App() {
 
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={coloredSeries}>
-            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
 
-            <XAxis dataKey="minute" tickFormatter={formatTimeSafe} />
+  {/* 🔥 ZONAS DE COLOR (ANTES DE TODO) */}
+  <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.12} />
+  <ReferenceArea yAxisId="left" y1={0.6} y2={1.1} fill="#f59e0b" fillOpacity={0.12} />
+  <ReferenceArea yAxisId="left" y1={1.1} y2={2} fill="#ef4444" fillOpacity={0.12} />
 
-            <YAxis
-              yAxisId="left"
-              tickFormatter={(v) => `${v}s`}
-            />
-            <YAxis yAxisId="right" orientation="right" />
+  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
 
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-          
-          <YAxis
-            yAxisId="left"
-            domain={[0, 2]}
-            tickFormatter={(v) => `${v}s`}
-          />
-          
-          <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.12} />
-          <ReferenceArea yAxisId="left" y1={0.6} y2={1.1} fill="#f59e0b" fillOpacity={0.12} />
-          <ReferenceArea yAxisId="left" y1={1.1} y2={2} fill="#ef4444" fillOpacity={0.12} />
+  <XAxis dataKey="minute" tickFormatter={formatTimeSafe} />
 
-            {showLatency && (
-              <>
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="latency_ok"
-                  stroke="#22c55e"
-                  strokeWidth={2.5}
-                  dot={false}
-                />
+  {/* ✅ SOLO UN YAxis */}
+  <YAxis
+    yAxisId="left"
+    domain={[0, 2]}
+    tickFormatter={(v) => `${v}s`}
+  />
 
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="latency_warn"
-                  stroke="#f59e0b"
-                  strokeWidth={2.5}
-                  dot={false}
-                />
+  <YAxis yAxisId="right" orientation="right" />
 
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="latency_crit"
-                  stroke="#ef4444"
-                  strokeWidth={2.5}
-                  dot={false}
-                />
-              </>
-            )}
+  <Tooltip content={<CustomTooltip />} />
+  <Legend />
 
-            {showErrors && (
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="errors"
-                stroke="#ef4444"
-                strokeWidth={2.5}
-              />
-            )}
-            <ReferenceLine
-              y={0.6}
-              yAxisId="left"
-              stroke="#f59e0b"
-              strokeDasharray="4 4"
-              label={{ value: "warning", position: "right", fill: "#f59e0b" }}
-            />
+  {/* 🔥 LÍNEAS COLOREADAS */}
+  {showLatency && (
+    <>
+      <Line
+        yAxisId="left"
+        type="monotone"
+        dataKey="latency_ok"
+        stroke="#22c55e"
+        strokeWidth={2.5}
+        dot={false}
+        name="Latency (OK)"
+      />
 
-            <ReferenceLine
-              y={1.1}
-              yAxisId="left"
-              stroke="#ef4444"
-              strokeDasharray="4 4"
-              label={{ value: "critical", position: "right", fill: "#ef4444" }}
-            />
+      <Line
+        yAxisId="left"
+        type="monotone"
+        dataKey="latency_warn"
+        stroke="#f59e0b"
+        strokeWidth={2.5}
+        dot={false}
+        name="Latency (Warning)"
+      />
 
-            <Brush
-              dataKey="minute"
-              height={8}
-              stroke="#334155"
-              travellerWidth={8}
-              fill="#0f172a"
-              tickFormatter={() => ""}
-            />
-          </LineChart>
+      <Line
+        yAxisId="left"
+        type="monotone"
+        dataKey="latency_crit"
+        stroke="#ef4444"
+        strokeWidth={2.5}
+        dot={false}
+        name="Latency (Critical)"
+      />
+    </>
+  )}
+
+  {showErrors && (
+    <Line
+      yAxisId="right"
+      type="monotone"
+      dataKey="errors"
+      stroke="#ef4444"
+      strokeWidth={2.5}
+      name="Errors"
+    />
+  )}
+
+  {/* LÍNEAS DE REFERENCIA */}
+  <ReferenceLine
+    y={0.6}
+    yAxisId="left"
+    stroke="#f59e0b"
+    strokeDasharray="4 4"
+    label={{ value: "warning", position: "right", fill: "#f59e0b" }}
+  />
+
+  <ReferenceLine
+    y={1.1}
+    yAxisId="left"
+    stroke="#ef4444"
+    strokeDasharray="4 4"
+    label={{ value: "critical", position: "right", fill: "#ef4444" }}
+  />
+
+  <Brush
+    dataKey="minute"
+    height={8}
+    stroke="#334155"
+    travellerWidth={8}
+    fill="#0f172a"
+    tickFormatter={() => ""}
+  />
+
+</LineChart>
         </ResponsiveContainer>
       </div>
 
