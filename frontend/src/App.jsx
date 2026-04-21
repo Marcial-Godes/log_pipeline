@@ -486,17 +486,15 @@ function App() {
 
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={coloredSeries}>
-
-  {/* 🔥 ZONAS DE COLOR (ANTES DE TODO) */}
-  <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.12} />
-  <ReferenceArea yAxisId="left" y1={0.6} y2={1.1} fill="#f59e0b" fillOpacity={0.12} />
-  <ReferenceArea yAxisId="left" y1={1.1} y2={2} fill="#ef4444" fillOpacity={0.12} />
+  {/* ZONAS */}
+  <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.05} />
+  <ReferenceArea yAxisId="left" y1={0.6} y2={1.1} fill="#f59e0b" fillOpacity={0.05} />
+  <ReferenceArea yAxisId="left" y1={1.1} y2={2} fill="#ef4444" fillOpacity={0.05} />
 
   <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
 
   <XAxis dataKey="minute" tickFormatter={formatTimeSafe} />
 
-  {/* ✅ SOLO UN YAxis */}
   <YAxis
     yAxisId="left"
     domain={[0, 2]}
@@ -508,7 +506,7 @@ function App() {
   <Tooltip content={<CustomTooltip />} />
   <Legend />
 
-  {/* 🔥 LÍNEAS COLOREADAS */}
+  {/* LATENCY */}
   {showLatency && (
     <>
       <Line
@@ -519,7 +517,6 @@ function App() {
         strokeWidth={2.5}
         dot={false}
         name="Latency (OK)"
-        connectNulls
       />
 
       <Line
@@ -530,7 +527,6 @@ function App() {
         strokeWidth={2.5}
         dot={false}
         name="Latency (Warning)"
-        connectNulls
       />
 
       <Line
@@ -541,11 +537,11 @@ function App() {
         strokeWidth={2.5}
         dot={false}
         name="Latency (Critical)"
-        connectNulls
       />
     </>
   )}
 
+  {/* ERRORS */}
   {showErrors && (
     <Line
       yAxisId="right"
@@ -554,10 +550,10 @@ function App() {
       stroke="#ef4444"
       strokeWidth={2.5}
       name="Errors"
+      dot={{ r: 4 }}
     />
   )}
 
-  {/* LÍNEAS DE REFERENCIA */}
   <ReferenceLine
     y={0.6}
     yAxisId="left"
@@ -582,7 +578,6 @@ function App() {
     fill="#0f172a"
     tickFormatter={() => ""}
   />
-
 </LineChart>
         </ResponsiveContainer>
       </div>
