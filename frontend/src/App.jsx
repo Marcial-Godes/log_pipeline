@@ -512,6 +512,21 @@ function App() {
                 strokeWidth={2.5}
               />
             )}
+            <ReferenceLine
+              y={0.6}
+              yAxisId="left"
+              stroke="#f59e0b"
+              strokeDasharray="4 4"
+              label={{ value: "warning", position: "right", fill: "#f59e0b" }}
+            />
+
+            <ReferenceLine
+              y={1.2}
+              yAxisId="left"
+              stroke="#ef4444"
+              strokeDasharray="4 4"
+              label={{ value: "critical", position: "right", fill: "#ef4444" }}
+            />
 
             <Brush
               dataKey="minute"
