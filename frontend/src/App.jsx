@@ -498,7 +498,7 @@ function App() {
             y1={0}
             y2={0.6}
             fill="#22c55e"
-            fillOpacity={0.05}
+            fillOpacity={0.15}
           />
 
           <ReferenceArea
@@ -506,7 +506,7 @@ function App() {
             y1={0.6}
             y2={1.1}
             fill="#f59e0b"
-            fillOpacity={0.05}
+            fillOpacity={0.15}
           />
 
           <ReferenceArea
@@ -514,7 +514,7 @@ function App() {
             y1={1.1}
             y2={5}
             fill="#ef4444"
-            fillOpacity={0.05}
+            fillOpacity={0.15}
           />
 
             {showLatency && (
