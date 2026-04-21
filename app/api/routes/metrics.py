@@ -80,11 +80,14 @@ def metrics_timeseries(
         Metric.timestamp_minute
     ).all()
 
-    return [
-        {
-            "minute": str(r.timestamp_minute),
-            "total": int(r.total or 0),
-            "errors": int(r.errors or 0),
-        }
-        for r in rows
-    ]
+    return {
+        "series": [
+            {
+                "minute": str(r.timestamp_minute),
+                "total": int(r.total or 0),
+                "errors": int(r.errors or 0),
+                "avg_response_time": float(r.avg_response_time or 0),
+            }
+            for r in rows
+        ]
+    }
