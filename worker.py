@@ -1,126 +1,114 @@
 import json
-import asyncio
-import threading
+import time
+from datetime import datetime, UTC
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
+import redis
 
-import redis.asyncio as redis
-
-from app.websocket.manager import manager
-from app.core.database import Base, engine
+from app.core.database import SessionLocal
 from app.core.settings import settings
+from app.models.log import Log
 
-from app.api.routes import logs, analytics, metrics
-from app.api.routes.alerts import router as alerts_router
-
-# 🔥 IMPORTANTE
-from worker import worker as run_worker
-from alert_worker import run as run_alert_worker
-
-
-app = FastAPI()
-
+QUEUE_NAME = "log_queue"
 CHANNEL_NAME = "logs_channel"
 
-# Redis async (para API / WS)
-redis_client = redis.from_url(
+redis_client = redis.Redis.from_url(
     settings.REDIS_URL,
     decode_responses=True
 )
 
 
-@app.get("/")
-def root():
-    return {"message": "Log Pipeline API running"}
+def parse_timestamp(ts):
+    if not ts:
+        return datetime.now(UTC)
+
+    if ts.endswith("Z"):
+        ts = ts.replace("Z", "+00:00")
+
+    return datetime.fromisoformat(ts)
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+def get_minute_key(dt):
+    return dt.strftime("%Y-%m-%dT%H:%M")
 
 
-# =========================
-# 🔌 WEBSOCKET
-# =========================
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+def process_log(data):
+    db = SessionLocal()
 
     try:
-        while True:
-            await asyncio.sleep(10)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        ts = parse_timestamp(data.get("timestamp"))
+        minute = get_minute_key(ts)
+
+        endpoint = data.get("endpoint")
+        status = data.get("status_code")
+        response_time = data.get("response_time")
+
+        log = Log(
+            endpoint=endpoint,
+            method=data.get("method"),
+            status_code=status,
+            response_time=response_time,
+            timestamp=ts,
+            ip=data.get("ip"),
+            user_agent=data.get("user_agent"),
+        )
+
+        db.add(log)
+        db.commit()
+
+        pipe = redis_client.pipeline()
+
+        pipe.incr(f"metrics:{minute}:total")
+
+        if status >= 400:
+            pipe.incr(f"metrics:{minute}:errors")
+
+        pipe.hincrby(f"metrics:{minute}:endpoints", endpoint, 1)
+
+        if status >= 400:
+            pipe.hincrby(f"metrics:{minute}:errors_by_endpoint", endpoint, 1)
+
+        pipe.hincrbyfloat(
+            f"metrics:{minute}:response_time_sum",
+            endpoint,
+            float(response_time)
+        )
+
+        pipe.hincrby(
+            f"metrics:{minute}:response_time_count",
+            endpoint,
+            1
+        )
+
+        pipe.execute()
+
+        redis_client.publish(
+            CHANNEL_NAME,
+            json.dumps({"type": "new_log", "data": data})
+        )
+
+        print(f"✅ Guardado + métricas: {endpoint} {status}")
+
+    except Exception as e:
+        print("❌ Error procesando log:", e)
+        db.rollback()
+    finally:
+        db.close()
 
 
-# =========================
-# 📡 REDIS LISTENER
-# =========================
-async def redis_listener():
+# 🔥 ESTA ES LA FUNCIÓN QUE IMPORTAMOS
+def worker():
+    print("🚀 Worker started...")
+
     while True:
         try:
-            pubsub = redis_client.pubsub()
-            await pubsub.subscribe(CHANNEL_NAME)
+            item = redis_client.blpop(QUEUE_NAME, timeout=5)
 
-            print("📡 Subscribed to Redis channel")
+            if item:
+                _, raw = item
+                data = json.loads(raw)
 
-            while True:
-                message = await pubsub.get_message(
-                    ignore_subscribe_messages=True,
-                    timeout=1.0,
-                )
-
-                if message:
-                    data = json.loads(message["data"])
-                    await manager.broadcast(data)
-
-                await asyncio.sleep(0.01)
+                process_log(data)
 
         except Exception as e:
-            print("❌ Redis listener error:", e)
-            await asyncio.sleep(2)
-
-
-# =========================
-# 🔥 START WORKERS (KEY)
-# =========================
-def start_background_workers():
-    print("🚀 Starting background workers...")
-
-    # worker principal
-    threading.Thread(target=run_worker, daemon=True).start()
-
-    # alert worker
-    threading.Thread(target=run_alert_worker, daemon=True).start()
-
-
-@app.on_event("startup")
-async def startup_event():
-    Base.metadata.create_all(bind=engine)
-
-    asyncio.create_task(redis_listener())
-
-    # 🔥 CLAVE
-    start_background_workers()
-
-
-# =========================
-# 🌐 CORS
-# =========================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-# =========================
-# 📦 ROUTERS
-# =========================
-app.include_router(logs.router)
-app.include_router(analytics.router)
-app.include_router(metrics.router)
-app.include_router(alerts_router)
+            print("❌ Worker error:", e)
+            time.sleep(1)
