@@ -60,7 +60,7 @@ function App() {
   const getOsIcon = (os) => {
 
   if (os === "Windows")
-    return <Monitor size={40} strokeWidth={2.2} />;
+    return <Monitor size={18} strokeWidth={2.2} />;
 
   if (os === "Android")
     return <Smartphone size={18} strokeWidth={2.2} />;
@@ -102,13 +102,15 @@ function App() {
   };
 
 const getSeverity = (e) => {
-  if (e.status_code >=500 || e.response_time >1.2)
+  if (e.status_code >= 500 || e.response_time > 1.2)
     return "critical";
-  if (e.response_time >0.6)
-    return "warning";
 
-  return "healthy";
+  if (e.response_time > 0.6)
+    return "degraded";
+
+  return "normal";
 };
+
 const detectClient = (ua) => {
   if (!ua){
     return {
@@ -571,7 +573,7 @@ const detectClient = (ua) => {
             color:
               getSeverity(e) === "critical"
                 ? "#ef4444"
-                : getSeverity(e) === "warning"
+                : getSeverity(e) === "degraded"
                 ? "#f59e0b"
                 : "#22c55e"
           }}
@@ -628,7 +630,7 @@ const detectClient = (ua) => {
           flexWrap:"wrap"
         }}
       >
-        {e.response_time > 0.6 && (
+        {getSeverity(e) === "degraded" && (
           <span
             style={{
               background:"#f59e0b22",
