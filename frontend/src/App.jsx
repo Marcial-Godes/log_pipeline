@@ -61,7 +61,7 @@ function App() {
   const getOsIcon = (os) => {
 
   if (os === "Windows")
-    return <Monitor size={18} strokeWidth={2.2} />;
+    return <Monitor size={40} strokeWidth={2.2} />;
 
   if (os === "Android")
     return <Smartphone size={18} strokeWidth={2.2} />;
