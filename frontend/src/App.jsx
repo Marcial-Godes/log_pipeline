@@ -16,6 +16,13 @@ import {
   Brush,
   ReferenceArea,
 } from "recharts";
+import {
+  Monitor,
+  Smartphone,
+  Chrome,
+  Globe,
+  Apple
+} from "lucide-react";
 
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -51,6 +58,19 @@ function App() {
     "ALL",
     ...Array.from(new Set(events.map((e) => e.endpoint))),
   ];
+  const getOsIcon = (os) => {
+    
+    if(os==="Windows")
+      return <Monitor size={16} />;
+
+    if(os==="Android")
+      return <Smartphone size={16} />;
+
+    if(os==="iOS")
+      return <Apple size={16} />;
+
+    return <Globe size={16} />;
+  };
   
 
   useEffect(() => {
@@ -71,6 +91,23 @@ function App() {
     1.5
   );
   
+  const getMethodColor = (method) => {
+ if (method==="GET") return "#60a5fa";
+ if (method==="POST") return "#22c55e";
+ if (method==="PUT") return "#f59e0b";
+ if (method==="DELETE") return "#ef4444";
+ return "#94a3b8";
+};
+
+const getSeverity = (e) => {
+ if (e.status_code >=500 || e.response_time >1.2)
+   return "critical";
+
+ if (e.response_time >0.6)
+   return "warning";
+
+ return "healthy";
+};
   const detectClient = (ua) => {
  if (!ua){
    return {
@@ -491,7 +528,109 @@ function App() {
       <div className="grid">
         <div className="panel events-panel">
           <h2>📡 Eventos</h2>
-          {events.map((e, i) => {
+          {events.map((<div
+ key={i}
+ className="item"
+ style={{
+   borderLeft:`4px solid ${
+     isError ? "#ef4444":"#22c55e"
+   }`,
+   padding:"14px 14px 14px 16px"
+ }}
+>
+
+<div style={{
+display:"flex",
+alignItems:"center",
+gap:"12px",
+marginBottom:"10px"
+}}>
+
+<span style={{
+background:getMethodColor(e.method),
+padding:"4px 10px",
+borderRadius:"999px",
+fontSize:"12px",
+fontWeight:"700"
+}}>
+{e.method}
+</span>
+
+<strong style={{fontSize:"28px"}}>
+ {e.endpoint}
+</strong>
+
+<span>
+→ {e.status_code}
+</span>
+
+<span style={{
+marginLeft:"auto",
+color:
+ getSeverity(e)==="critical"
+ ? "#ef4444"
+ : getSeverity(e)==="warning"
+ ? "#f59e0b"
+ : "#22c55e"
+}}>
+{getSeverity(e)}
+</span>
+
+</div>
+
+
+<div style={{
+fontSize:"14px",
+opacity:.85,
+marginBottom:"8px"
+}}>
+⏱ {e.response_time?.toFixed(3)}s
+&nbsp;&nbsp;
+🕒 {formatTime(e.timestamp)}
+</div>
+
+
+<div style={{
+fontSize:"14px",
+opacity:.75,
+marginBottom:"10px"
+}}>
+<span style={{
+display:"flex",
+alignItems:"center",
+gap:"6px"
+}}>
+  {getOsIcon(client.os)}
+  {client.os} • {client.browser}
+</span>
+&nbsp;&nbsp;|&nbsp;&nbsp;
+🌍 {e.ip}
+</div>
+
+
+<div style={{
+display:"flex",
+gap:"8px",
+flexWrap:"wrap"
+}}>
+
+{e.response_time>0.6 &&
+<span className="tag warning">
+slow
+</span>}
+
+{e.status_code>=500 &&
+<span className="tag critical">
+5xx
+</span>}
+
+<span className="tag">
+{e.endpoint.replace("/","")}
+</span>
+
+</div>
+
+</div>) => {
             const isError = e.status_code >= 400;
             const client = detectClient(e.user_agent);
 
