@@ -69,6 +69,9 @@ function App() {
     if(os==="iOS")
       return <Apple size={16} />;
 
+    if(os==="Linux")
+      return <Globe size={16} />;
+
     return <Globe size={16} />;
   };
   
@@ -92,16 +95,16 @@ function App() {
   );
   
   const getMethodColor = (method) => {
- if (method==="GET") return "#60a5fa";
- if (method==="POST") return "#22c55e";
- if (method==="PUT") return "#f59e0b";
- if (method==="DELETE") return "#ef4444";
- return "#94a3b8";
-};
+    if (method==="GET") return "#60a5fa";
+  if (method==="POST") return "#22c55e";
+  if (method==="PUT") return "#f59e0b";
+  if (method==="DELETE") return "#ef4444";
+  return "#94a3b8";
+  };
 
 const getSeverity = (e) => {
- if (e.status_code >=500 || e.response_time >1.2)
-   return "critical";
+  if (e.status_code >=500 || e.response_time >1.2)
+    return "critical";
 
  if (e.response_time >0.6)
    return "warning";
@@ -528,141 +531,156 @@ const getSeverity = (e) => {
       <div className="grid">
         <div className="panel events-panel">
           <h2>📡 Eventos</h2>
-          {events.map((<div
- key={i}
- className="item"
- style={{
-   borderLeft:`4px solid ${
-     isError ? "#ef4444":"#22c55e"
-   }`,
-   padding:"14px 14px 14px 16px"
- }}
->
+          {events.map((e, i) => {
+  const isError = e.status_code >= 400;
+  const client = detectClient(e.user_agent);
 
-<div style={{
-display:"flex",
-alignItems:"center",
-gap:"12px",
-marginBottom:"10px"
-}}>
+  return (
+    <div
+      key={i}
+      className="item"
+      style={{
+        borderLeft: `4px solid ${
+          isError ? "#ef4444" : "#22c55e"
+        }`,
+        padding: "14px 14px 14px 16px"
+      }}
+    >
+      {/* HEADER */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          marginBottom: "10px"
+        }}
+      >
+        <span
+          style={{
+            background: getMethodColor(e.method),
+            padding: "4px 10px",
+            borderRadius: "999px",
+            fontSize: "12px",
+            fontWeight: "700",
+            color:"#fff"
+          }}
+        >
+          {e.method}
+        </span>
 
-<span style={{
-background:getMethodColor(e.method),
-padding:"4px 10px",
-borderRadius:"999px",
-fontSize:"12px",
-fontWeight:"700"
-}}>
-{e.method}
-</span>
+        <strong style={{ fontSize: "28px" }}>
+          {e.endpoint}
+        </strong>
 
-<strong style={{fontSize:"28px"}}>
- {e.endpoint}
-</strong>
+        <span>
+          → {e.status_code}
+        </span>
 
-<span>
-→ {e.status_code}
-</span>
+        <span
+          style={{
+            marginLeft: "auto",
+            color:
+              getSeverity(e) === "critical"
+                ? "#ef4444"
+                : getSeverity(e) === "warning"
+                ? "#f59e0b"
+                : "#22c55e"
+          }}
+        >
+          {getSeverity(e)}
+        </span>
+      </div>
 
-<span style={{
-marginLeft:"auto",
-color:
- getSeverity(e)==="critical"
- ? "#ef4444"
- : getSeverity(e)==="warning"
- ? "#f59e0b"
- : "#22c55e"
-}}>
-{getSeverity(e)}
-</span>
+      {/* META */}
+      <div
+        style={{
+          fontSize: "14px",
+          opacity: .85,
+          marginBottom: "8px"
+        }}
+      >
+        ⏱ {e.response_time?.toFixed(3)}s
+        &nbsp;&nbsp;
+        🕒 {formatTime(e.timestamp)}
+      </div>
 
-</div>
+      {/* CLIENT */}
+      <div
+        style={{
+          display:"flex",
+          alignItems:"center",
+          gap:"12px",
+          fontSize:"14px",
+          opacity:.75,
+          marginBottom:"10px"
+        }}
+      >
+        <span
+          style={{
+            display:"flex",
+            alignItems:"center",
+            gap:"6px"
+          }}
+        >
+          {getOsIcon(client.os)}
+          {client.os} • {client.browser}
+        </span>
 
+        <span>
+          🌍 {e.ip}
+        </span>
+      </div>
 
-<div style={{
-fontSize:"14px",
-opacity:.85,
-marginBottom:"8px"
-}}>
-⏱ {e.response_time?.toFixed(3)}s
-&nbsp;&nbsp;
-🕒 {formatTime(e.timestamp)}
-</div>
+      {/* TAGS */}
+      <div
+        style={{
+          display:"flex",
+          gap:"8px",
+          flexWrap:"wrap"
+        }}
+      >
+        {e.response_time > 0.6 && (
+          <span
+            style={{
+              background:"#f59e0b22",
+              color:"#f59e0b",
+              padding:"4px 8px",
+              borderRadius:"999px",
+              fontSize:"12px"
+            }}
+          >
+            slow
+          </span>
+        )}
 
+        {e.status_code >= 500 && (
+          <span
+            style={{
+              background:"#ef444422",
+              color:"#ef4444",
+              padding:"4px 8px",
+              borderRadius:"999px",
+              fontSize:"12px"
+            }}
+          >
+            5xx
+          </span>
+        )}
 
-<div style={{
-fontSize:"14px",
-opacity:.75,
-marginBottom:"10px"
-}}>
-<span style={{
-display:"flex",
-alignItems:"center",
-gap:"6px"
-}}>
-  {getOsIcon(client.os)}
-  {client.os} • {client.browser}
-</span>
-&nbsp;&nbsp;|&nbsp;&nbsp;
-🌍 {e.ip}
-</div>
-
-
-<div style={{
-display:"flex",
-gap:"8px",
-flexWrap:"wrap"
-}}>
-
-{e.response_time>0.6 &&
-<span className="tag warning">
-slow
-</span>}
-
-{e.status_code>=500 &&
-<span className="tag critical">
-5xx
-</span>}
-
-<span className="tag">
-{e.endpoint.replace("/","")}
-</span>
-
-</div>
-
-</div>) => {
-            const isError = e.status_code >= 400;
-            const client = detectClient(e.user_agent);
-
-            return (
-              <div
-                key={i}
-                className="item"
-                style={{
-                  borderLeft: `4px solid ${
-                    isError ? "#ef4444" : "#22c55e"
-                  }`,
-                  paddingLeft: "8px",
-                }}
-              >
-                <div>
-                  <strong>
-                    {e.method} {e.endpoint}
-                  </strong>{" "}
-                  → {e.status_code}
-                </div>
-
-                <div style={{ fontSize: "12px", opacity: 0.8 }}>
-                  ⏱ {e.response_time?.toFixed(3)}s | 🕒{" "}
-                  {formatTime(e.timestamp)}
-                </div>
-
-                <div style={{ fontSize: "12px", opacity: 0.6 }}>
-                  🌐 {e.ip} | {client.icon} {client.label}
-                </div>
-              </div>
-            );
-          })}
+        <span
+          style={{
+            background:"#334155",
+            padding:"4px 8px",
+            borderRadius:"999px",
+            fontSize:"12px"
+          }}
+        >
+          {e.endpoint.replace("/", "")}
+        </span>
+      </div>
+    </div>
+  );
+})}
         </div>
 
         <div className="panel alerts-panel">
