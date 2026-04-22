@@ -51,6 +51,7 @@ function App() {
     "ALL",
     ...Array.from(new Set(events.map((e) => e.endpoint))),
   ];
+  
 
   useEffect(() => {
     localStorage.setItem("minutes", selectedMinutes);
@@ -63,6 +64,11 @@ function App() {
   const maxLatency = Math.max(
     ...(timeSeries.length ? timeSeries.map(d => d.avg_response_time || 0) : [0]),
     0.5
+  );
+
+  const latencyCeiling = Math.max(
+    maxLatency * 1.3,
+    1.5
   );
   
   const detectClient = (ua) => {
@@ -482,9 +488,27 @@ function App() {
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timeSeries}>
   {/* ZONAS */}
-  <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.04} />
-  <ReferenceArea yAxisId="left" y1={0.6} y2={1.1} fill="#f59e0b" fillOpacity={0.06} />
-  <ReferenceArea yAxisId="left" y1={1.1} y2={maxLatency * 1.3} fill="#ef4444" fillOpacity={0.10} />
+  <ReferenceArea
+    yAxisId="left"
+    y1={0}
+    y2={0.6}
+    fill="#22c55e"
+    fillOpacity={0.04}
+  />
+  <ReferenceArea
+    yAxisId="left"
+    y1={0.6}
+    y2={1.1}
+    fill="#f59e0b"
+    fillOpacity={0.06}
+  />
+  <ReferenceArea
+    yAxisId="left"
+    y1={1.1}
+    y2={latencyCeiling}
+    fill="#ef4444"
+    fillOpacity={0.1}
+  />
 
   <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
 
@@ -492,7 +516,7 @@ function App() {
 
   <YAxis
     yAxisId="left"
-    domain={[0, maxLatency * 1.3]}
+    domain={[0, latencyCeiling]}
     tickFormatter={(v) => `${v.toFixed(1)}s`}
   />
 
