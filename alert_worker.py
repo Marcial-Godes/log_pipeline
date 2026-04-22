@@ -76,7 +76,9 @@ def calculate_error_rate():
         minute = format_minute(minute_dt)
 
         totals += int(redis_client.get(f"metrics:{minute}:total") or 0)
-        errors += int(redis_client.get(f"metrics:{minute}:errors") or 0)
+        errors += sum(
+            int(v) for v in redis_client.hvals(f"metrics:{minute}:errors_by_endpoint") or []
+        )
 
     if totals == 0:
         return 0

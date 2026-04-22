@@ -73,7 +73,7 @@ def process_log(data):
         pipe.hincrby(f"metrics:{minute}:endpoints", endpoint, 1)
 
         if status >= 400:
-            pipe.hincrby(f"metrics:{minute}:errors_by_endpoint", endpoint, 1)
+            pipe.incr(f"metrics:{minute}:errors")  # 👈 AÑADE ESTO
 
         pipe.hincrbyfloat(
             f"metrics:{minute}:response_time_sum",

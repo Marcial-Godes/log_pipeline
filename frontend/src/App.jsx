@@ -47,11 +47,6 @@ function App() {
   const [showLatency, setShowLatency] = useState(true);
   const [showErrors, setShowErrors] = useState(true);
 
-  const maxLatency = Math.max(
-    ...(timeSeries.length ? timeSeries.map(d => d.avg_response_time || 0) : [0]),
-    0.5
-  );
-
   const endpointsList = [
     "ALL",
     ...Array.from(new Set(events.map((e) => e.endpoint))),
@@ -426,6 +421,10 @@ function App() {
           {events.map((e, i) => {
             const isError = e.status_code >= 400;
             const client = detectClient(e.user_agent);
+            const maxLatency = Math.max(
+              ...(timeSeries.length ? timeSeries.map(d => d.avg_response_time || 0) : [0]),
+              0.5
+            );
 
             return (
               <div
