@@ -19,7 +19,6 @@ import {
 import {
   Monitor,
   Smartphone,
-  Chrome,
   Globe,
   Apple
 } from "lucide-react";
