@@ -133,7 +133,9 @@ def metrics_timeseries(
     current = since
 
     while current <= now:
-        row = data_map.get(current.replace(tzinfo=None))
+        row = data_map.get(
+            current.replace(tzinfo=None)
+        )
 
         if row:
             series.append({
@@ -143,7 +145,6 @@ def metrics_timeseries(
                 "avg_response_time": float(row.avg_response_time or 0),
             })
         else:
-            # 🔥 minuto sin datos → rellenar
             series.append({
                 "minute": str(current),
                 "total": 0,

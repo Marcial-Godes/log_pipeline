@@ -520,7 +520,7 @@ function App() {
   {showErrors && (
     <Line
       yAxisId="right"
-      type="monotone"
+      type="stepAfter"
       dataKey="errors"
       stroke="#ef4444"
       strokeWidth={2.5}
