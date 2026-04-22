@@ -482,9 +482,9 @@ function App() {
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timeSeries}>
   {/* ZONAS */}
-  <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.05} />
-  <ReferenceArea yAxisId="left" y1={0.6} y2={1.1} fill="#f59e0b" fillOpacity={0.05} />
-  <ReferenceArea yAxisId="left" y1={1.1} y2={2} fill="#ef4444" fillOpacity={0.05} />
+  <ReferenceArea yAxisId="left" y1={0} y2={0.6} fill="#22c55e" fillOpacity={0.04} />
+  <ReferenceArea yAxisId="left" y1={0.6} y2={1.1} fill="#f59e0b" fillOpacity={0.06} />
+  <ReferenceArea yAxisId="left" y1={1.1} y2={maxLatency * 1.3} fill="#ef4444" fillOpacity={0.10} />
 
   <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
 
