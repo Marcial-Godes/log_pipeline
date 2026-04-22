@@ -17,7 +17,7 @@ router = APIRouter(
 # =========================
 @router.get("/db-test")
 def test_db(db: Session = Depends(get_db)):
-    data = db.query(Metric).order_by(Metric.id.desc()).limit(5).all()
+    data = db.query(Metric).order_by(Metric.id.desc()).limit(15).all()
 
     return [
         {

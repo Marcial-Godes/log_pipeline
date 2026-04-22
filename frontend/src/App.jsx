@@ -119,29 +119,58 @@ function App() {
 
   // 🔥 BOTONES TEST
   const sendTestLog = async (type = "ok") => {
-    const payload =
-      type === "error"
-        ? {
-            endpoint: "/test-error",
-            method: "GET",
-            status_code: 500,
-            response_time: 1.5,
-          }
-        : {
-            endpoint: "/test-ok",
-            method: "GET",
-            status_code: 200,
-            response_time: 0.2,
-          };
 
-    await fetch(`${API_URL}/logs/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-  };
+  const okEndpoints = [
+    "/users",
+    "/login",
+    "/search",
+    "/inventory"
+  ];
+
+  const errorEndpoints = [
+    "/orders",
+    "/payments",
+    "/checkout"
+  ];
+
+  const randomFrom = (arr) =>
+    arr[Math.floor(Math.random() * arr.length)];
+
+  const randomLatency = (min, max) =>
+    +(Math.random() * (max - min) + min).toFixed(3);
+
+
+  const payload =
+    type === "error"
+      ? {
+          endpoint: randomFrom(errorEndpoints),
+          method: ["POST","PUT","DELETE"][
+            Math.floor(Math.random()*3)
+          ],
+          status_code: [500,502,503][
+            Math.floor(Math.random()*3)
+          ],
+          response_time: randomLatency(1.0, 2.2),
+        }
+      : {
+          endpoint: randomFrom(okEndpoints),
+          method: ["GET","POST"][
+            Math.floor(Math.random()*2)
+          ],
+          status_code: 200,
+          response_time: randomLatency(0.15,0.9),
+        };
+
+
+  await fetch(`${API_URL}/logs/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+};
 
   const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null;
