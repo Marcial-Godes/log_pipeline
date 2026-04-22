@@ -102,8 +102,10 @@ def metrics_timeseries(
     minutes: int = Query(120, ge=1, le=1440),
     db: Session = Depends(get_db)
 ):
-    since = datetime.now(UTC) - timedelta(minutes=minutes)
+    now = datetime.now(UTC).replace(second=0, microsecond=0)
+    since = now - timedelta(minutes=minutes)
 
+    # 🔹 1. Traer datos reales
     rows = db.query(
         Metric.timestamp_minute,
         func.sum(Metric.total).label("total"),
@@ -113,18 +115,37 @@ def metrics_timeseries(
         Metric.timestamp_minute >= since
     ).group_by(
         Metric.timestamp_minute
-    ).order_by(
-        Metric.timestamp_minute
     ).all()
 
-    return {
-        "series": [
-            {
-                "minute": str(r.timestamp_minute),
-                "total": int(r.total or 0),
-                "errors": int(r.errors or 0),
-                "avg_response_time": float(r.avg_response_time or 0),
-            }
-            for r in rows
-        ]
+    # 🔹 2. Convertir a dict para lookup rápido
+    data_map = {
+        r.timestamp_minute.replace(second=0, microsecond=0): r
+        for r in rows
     }
+
+    # 🔹 3. Generar TODOS los minutos
+    series = []
+    current = since
+
+    while current <= now:
+        row = data_map.get(current)
+
+        if row:
+            series.append({
+                "minute": str(current),
+                "total": int(row.total or 0),
+                "errors": int(row.errors or 0),
+                "avg_response_time": float(row.avg_response_time or 0),
+            })
+        else:
+            # 🔥 minuto sin datos → rellenar
+            series.append({
+                "minute": str(current),
+                "total": 0,
+                "errors": 0,
+                "avg_response_time": 0.0,
+            })
+
+        current += timedelta(minutes=1)
+
+    return {"series": series}
