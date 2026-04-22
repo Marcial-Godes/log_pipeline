@@ -676,7 +676,8 @@ const detectClient = (ua) => {
 
         <span
           style={{
-            background:"#334155",
+            background:"#60A5FA26",
+            color:"#60a5fa",
             padding:"4px 8px",
             borderRadius:"999px",
             fontSize:"12px"
