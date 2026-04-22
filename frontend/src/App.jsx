@@ -72,18 +72,51 @@ function App() {
   );
   
   const detectClient = (ua) => {
-    if (!ua) return { label: "Unknown", icon: "❓" };
+ if (!ua){
+   return {
+     browser:"Unknown",
+     os:"Unknown",
+     icon:"❓"
+   };
+ }
 
-    const lower = ua.toLowerCase();
+ const s = ua.toLowerCase();
 
-    if (lower.includes("postman")) return { label: "Postman", icon: "🧪" };
-    if (lower.includes("thunder")) return { label: "Thunder", icon: "🧪" };
-    if (lower.includes("curl")) return { label: "Bot", icon: "🤖" };
-    if (lower.includes("mozilla")) return { label: "Browser", icon: "🌐" };
-    if (lower.includes("mobile")) return { label: "Mobile", icon: "📱" };
+ let browser="Other";
 
-    return { label: "Other", icon: "🖥" };
-  };
+ if (s.includes("edg")) browser="Edge";
+ else if (s.includes("firefox")) browser="Firefox";
+ else if (s.includes("chrome")) browser="Chrome";
+ else if (s.includes("safari")) browser="Safari";
+
+ let os="Other";
+ let icon="💻";
+
+ if (s.includes("windows")){
+   os="Windows";
+   icon="🪟";
+ }
+
+ else if (s.includes("android")){
+   os="Android";
+   icon="🤖";
+ }
+
+ else if (
+   s.includes("iphone") ||
+   s.includes("ipad")
+ ){
+   os="iOS";
+   icon="🍎";
+ }
+
+ else if (s.includes("linux")){
+   os="Linux";
+   icon="🐧";
+ }
+
+ return {browser,os,icon};
+};
 
   const timeAgo = (timestamp) => {
     if (!timestamp) return "";

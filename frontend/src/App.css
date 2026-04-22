@@ -106,3 +106,20 @@ select option {
   background-color: #0f172a;
   color: #e2e8f0;
 }
+
+.tag{
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:11px;
+  background:#334155;
+}
+
+.tag.warning{
+background:rgba(245,158,11,.15);
+color:#f59e0b;
+}
+
+.tag.critical{
+background:rgba(239,68,68,.15);
+color:#ef4444;
+}
