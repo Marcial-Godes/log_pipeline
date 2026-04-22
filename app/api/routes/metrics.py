@@ -107,19 +107,19 @@ def metrics_timeseries(
 
     # 🔹 1. Traer datos reales
     rows = db.query(
-        Metric.timestamp_minute,
+        func.date_trunc('minute', Metric.timestamp_minute).label("minute"),
         func.sum(Metric.total).label("total"),
         func.sum(Metric.errors).label("errors"),
         func.avg(Metric.avg_response_time).label("avg_response_time"),
     ).filter(
         Metric.timestamp_minute >= since
     ).group_by(
-        Metric.timestamp_minute
+        "minute"
     ).all()
 
     # 🔹 2. Convertir a dict para lookup rápido
     data_map = {
-        r.timestamp_minute.replace(second=0, microsecond=0): r
+        r.minute: r
         for r in rows
     }
 
