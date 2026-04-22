@@ -59,21 +59,21 @@ function App() {
     ...Array.from(new Set(events.map((e) => e.endpoint))),
   ];
   const getOsIcon = (os) => {
-    
-    if(os==="Windows")
-      return <Monitor size={16} />;
 
-    if(os==="Android")
-      return <Smartphone size={16} />;
+  if (os === "Windows")
+    return <Monitor size={18} strokeWidth={2.2} />;
 
-    if(os==="iOS")
-      return <Apple size={16} />;
+  if (os === "Android")
+    return <Smartphone size={18} strokeWidth={2.2} />;
 
-    if(os==="Linux")
-      return <Globe size={16} />;
+  if (os === "iOS")
+    return <Apple size={18} strokeWidth={2.2} />;
 
-    return <Globe size={16} />;
-  };
+  if (os === "Linux")
+    return <Globe size={18} strokeWidth={2.2} />;
+
+  return <Globe size={18} strokeWidth={2.2} />;
+};
   
 
   useEffect(() => {
