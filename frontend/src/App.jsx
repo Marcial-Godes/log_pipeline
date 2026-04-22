@@ -47,6 +47,11 @@ function App() {
   const [showLatency, setShowLatency] = useState(true);
   const [showErrors, setShowErrors] = useState(true);
 
+  const maxLatency = Math.max(
+    ...(timeSeries.length ? timeSeries.map(d => d.avg_response_time || 0) : [0]),
+    0.5
+  );
+
   const endpointsList = [
     "ALL",
     ...Array.from(new Set(events.map((e) => e.endpoint))),
@@ -61,10 +66,6 @@ function App() {
   }, [selectedEndpoint]);
 
   const detectClient = (ua) => {
-    const maxLatency = Math.max(
-  ...timeSeries.map(d => d.avg_response_time || 0),
-  0.5
-);
     if (!ua) return { label: "Unknown", icon: "❓" };
 
     const lower = ua.toLowerCase();
@@ -490,10 +491,10 @@ function App() {
   <XAxis dataKey="minute" tickFormatter={formatTimeSafe} />
 
   <YAxis
-  yAxisId="left"
-  domain={[0, maxLatency * 1.3]}
-  tickFormatter={(v) => `${v.toFixed(1)}s`}
-/>
+    yAxisId="left"
+    domain={[0, maxLatency * 1.3]}
+    tickFormatter={(v) => `${v.toFixed(1)}s`}
+  />
 
   <YAxis yAxisId="right" orientation="right" />
 
