@@ -124,7 +124,7 @@ def metrics_timeseries(
 
     # 🔹 2. Convertir a dict para lookup rápido
     data_map = {
-        r.timestamp_minute.replace(second=0, microsecond=0): r
+        r.timestamp_minute: r
         for r in rows
     }
 
@@ -133,7 +133,7 @@ def metrics_timeseries(
     current = since
 
     while current <= now:
-        row = data_map.get(current)
+        row = data_map.get(current.replace(tzinfo=UTC))
 
         if row:
             series.append({

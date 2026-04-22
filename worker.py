@@ -68,7 +68,7 @@ def process_log(data):
         if 200 <= status < 300:
             pipe.incr(f"metrics:{minute}:success")
         elif status >= 400:
-            pipe.incr(f"metrics:{minute}:errors")
+            pipe.hincrby(f"metrics:{minute}:errors_by_endpoint", endpoint, 1)
 
         pipe.hincrby(f"metrics:{minute}:endpoints", endpoint, 1)
 
