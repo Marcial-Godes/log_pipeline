@@ -105,57 +105,47 @@ function App() {
 const getSeverity = (e) => {
   if (e.status_code >=500 || e.response_time >1.2)
     return "critical";
+  if (e.response_time >0.6)
+    return "warning";
 
- if (e.response_time >0.6)
-   return "warning";
-
- return "healthy";
+  return "healthy";
 };
-  const detectClient = (ua) => {
- if (!ua){
-   return {
-     browser:"Unknown",
-     os:"Unknown",
-     icon:"❓"
-   };
- }
+const detectClient = (ua) => {
+  if (!ua){
+    return {
+      browser:"Unknown",
+      os:"Unknown"
+    };
+  }
 
- const s = ua.toLowerCase();
+  const s = ua.toLowerCase();
 
- let browser="Other";
+  let browser="Other";
 
- if (s.includes("edg")) browser="Edge";
- else if (s.includes("firefox")) browser="Firefox";
- else if (s.includes("chrome")) browser="Chrome";
- else if (s.includes("safari")) browser="Safari";
+  if (s.includes("edg")) browser="Edge";
+  else if (s.includes("firefox")) browser="Firefox";
+  else if (s.includes("chrome")) browser="Chrome";
+  else if (s.includes("safari")) browser="Safari";
 
- let os="Other";
- let icon="💻";
+  let os="Other";
 
- if (s.includes("windows")){
-   os="Windows";
-   icon="🪟";
- }
+  if (s.includes("windows")){
+    os="Windows";
+  }
+  else if (s.includes("android")){
+    os="Android";
+  }
+  else if (
+    s.includes("iphone") ||
+    s.includes("ipad")
+  ){
+    os="iOS";
+  }
+  else if (s.includes("linux")){
+    os="Linux";
+  }
 
- else if (s.includes("android")){
-   os="Android";
-   icon="🤖";
- }
-
- else if (
-   s.includes("iphone") ||
-   s.includes("ipad")
- ){
-   os="iOS";
-   icon="🍎";
- }
-
- else if (s.includes("linux")){
-   os="Linux";
-   icon="🐧";
- }
-
- return {browser,os,icon};
+  return { browser, os };
 };
 
   const timeAgo = (timestamp) => {
@@ -568,7 +558,7 @@ const getSeverity = (e) => {
           {e.method}
         </span>
 
-        <strong style={{ fontSize: "28px" }}>
+        <strong style={{ fontSize: "20px" }}>
           {e.endpoint}
         </strong>
 
