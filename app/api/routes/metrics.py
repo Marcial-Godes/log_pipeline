@@ -124,7 +124,7 @@ def metrics_timeseries(
 
     # 🔹 2. Convertir a dict para lookup rápido
     data_map = {
-        r.minute: r
+        r.timestamp_minute.replace(second=0, microsecond=0): r
         for r in rows
     }
 

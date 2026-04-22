@@ -60,6 +60,11 @@ function App() {
     localStorage.setItem("endpoint", selectedEndpoint);
   }, [selectedEndpoint]);
 
+  const maxLatency = Math.max(
+    ...(timeSeries.length ? timeSeries.map(d => d.avg_response_time || 0) : [0]),
+    0.5
+  );
+  
   const detectClient = (ua) => {
     if (!ua) return { label: "Unknown", icon: "❓" };
 
@@ -421,10 +426,6 @@ function App() {
           {events.map((e, i) => {
             const isError = e.status_code >= 400;
             const client = detectClient(e.user_agent);
-            const maxLatency = Math.max(
-              ...(timeSeries.length ? timeSeries.map(d => d.avg_response_time || 0) : [0]),
-              0.5
-            );
 
             return (
               <div
