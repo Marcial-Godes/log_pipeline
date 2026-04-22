@@ -492,7 +492,7 @@ function App() {
 
   <YAxis
     yAxisId="left"
-    domain={[0, "auto"]}
+    domain={[0, maxLatency * 1.3]}
     tickFormatter={(v) => `${v.toFixed(1)}s`}
   />
 
@@ -506,7 +506,7 @@ function App() {
     <>
     <Line
       yAxisId="left"
-      type="linear"
+      type="monotone"
       dataKey="avg_response_time"
       stroke="#60a5fa"
       strokeWidth={2.5}
@@ -520,7 +520,7 @@ function App() {
   {showErrors && (
     <Line
       yAxisId="right"
-      type="linear"
+      type="monotone"
       dataKey="errors"
       stroke="#ef4444"
       strokeWidth={2.5}
