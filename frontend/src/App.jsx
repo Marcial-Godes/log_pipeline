@@ -373,7 +373,7 @@ const detectClient = (ua) => {
 
   return (
     <div className="container">
-      <h1 style={{ marginBottom: "40px" }}>🚀 Log Dashboard</h1>
+      <h1 style={{ marginBottom: "40px" }}>🚀 LOG DASHBOARD TEST 999</h1>
 
       {/* HEADER MÁS RESPIRADO */}
       <div
