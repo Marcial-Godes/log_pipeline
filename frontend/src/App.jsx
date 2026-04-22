@@ -496,7 +496,11 @@ function App() {
     tickFormatter={(v) => `${v.toFixed(1)}s`}
   />
 
-  <YAxis yAxisId="right" orientation="right" />
+  <YAxis
+    yAxisId="right"
+    orientation="right"
+    domain={[0,"auto"]}
+  />
 
   <Tooltip content={<CustomTooltip />} />
   <Legend />
