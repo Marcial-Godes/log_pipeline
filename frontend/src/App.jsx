@@ -567,19 +567,35 @@ const detectClient = (ua) => {
           → {e.status_code}
         </span>
 
-        <span
-          style={{
-            marginLeft: "auto",
-            color:
-              getSeverity(e) === "critical"
-                ? "#ef4444"
-                : getSeverity(e) === "degraded"
-                ? "#f59e0b"
-                : "#22c55e"
-          }}
-        >
-          {getSeverity(e)}
-        </span>
+        <span>
+  → {e.status_code}
+</span>
+
+<span
+  style={{
+    background:
+      getSeverity(e) === "critical"
+        ? "rgba(239,68,68,.15)"
+        : getSeverity(e) === "degraded"
+        ? "rgba(245,158,11,.15)"
+        : "rgba(34,197,94,.15)",
+
+    color:
+      getSeverity(e) === "critical"
+        ? "#ef4444"
+        : getSeverity(e) === "degraded"
+        ? "#f59e0b"
+        : "#22c55e",
+
+    border:"1px solid currentColor",
+    padding:"4px 10px",
+    borderRadius:"999px",
+    fontSize:"12px",
+    fontWeight:"700"
+  }}
+>
+  {getSeverity(e).toUpperCase()}
+</span>
       </div>
 
       {/* META */}
