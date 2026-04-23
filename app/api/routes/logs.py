@@ -12,11 +12,12 @@ router = APIRouter(prefix="/logs", tags=["logs"])
 
 QUEUE_NAME = "log_queue"
 
-TEST_NET_POOLS = [
-    "203.0.113",   # Spain mock
-    "198.51.100",  # US mock
-    "192.0.2",     # EU mock
-]
+TEST_NET_POOLS = {
+    "🇪🇸 Barcelona": "203.0.113",
+    "🇺🇸 Virginia": "198.51.100",
+    "🇩🇪 Berlin": "192.0.2",
+    "🇫🇷 Paris": "203.0.113",
+}
 
 
 def generate_fake_ip():
@@ -42,7 +43,8 @@ async def create_log(
         log_dict["timestamp"] = datetime.now(UTC).isoformat()
 
     # enrich
-    log_dict["ip"] = generate_fake_ip()log_dict["ip"] = request.client.host if request.client else "unknown"
+    log_dict["ip"] = generate_fake_ip()
+    log_dict["ip"] = request.client.host if request.client else "unknown"
     log_dict["user_agent"] = request.headers.get("user-agent", "unknown")
 
     # ✅ async correctamente
