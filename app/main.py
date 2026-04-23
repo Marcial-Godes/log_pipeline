@@ -15,7 +15,6 @@ from app.core.settings import settings
 from app.api.routes import logs, metrics
 from app.api.routes.alerts import router as alerts_router
 
-# 🔥 IMPORTANTE
 from worker import worker as run_worker
 from alert_worker import run as run_alert_worker
 
@@ -24,7 +23,7 @@ app = FastAPI()
 
 CHANNEL_NAME = "logs_channel"
 
-# Redis async (para API / WS)
+# Cliente Redis asíncrono usado por la API y la difusión vía WebSocket
 redis_client = redis.from_url(
     settings.REDIS_URL,
     decode_responses=True
@@ -41,23 +40,20 @@ def health():
     return {"status": "ok"}
 
 
-# =========================
-# 🔌 WEBSOCKET
-# =========================
+# WebSocket para emitir eventos en tiempo real al frontend
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
 
     try:
         while True:
+            # Mantiene viva la conexión mientras el cliente siga conectado
             await asyncio.sleep(10)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
 
-# =========================
-# 📡 REDIS LISTENER
-# =========================
+# Suscripción a Redis Pub/Sub para reenviar eventos a clientes WebSocket
 async def redis_listener():
     while True:
         try:
@@ -83,9 +79,7 @@ async def redis_listener():
             await asyncio.sleep(2)
 
 
-# =========================
-# 🔥 START WORKERS
-# =========================
+# Inicializa los procesos en segundo plano para logs y alertas
 def start_background_workers():
     print("🚀 Starting background workers...")
 
@@ -93,19 +87,17 @@ def start_background_workers():
     threading.Thread(target=run_alert_worker, daemon=True).start()
 
 
+# Arranque de tablas, listener Redis y workers de background
 @app.on_event("startup")
 async def startup_event():
     Base.metadata.create_all(bind=engine)
 
     asyncio.create_task(redis_listener())
 
-    # 🔥 CLAVE
     start_background_workers()
 
 
-# =========================
-# 🌐 CORS
-# =========================
+# Configuración CORS para permitir acceso del frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -115,9 +107,7 @@ app.add_middleware(
 )
 
 
-# =========================
-# 📦 ROUTERS
-# =========================
+# Registro de rutas de la API
 app.include_router(logs.router)
 app.include_router(metrics.router)
 app.include_router(alerts_router)

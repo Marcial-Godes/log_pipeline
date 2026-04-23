@@ -12,9 +12,7 @@ router = APIRouter(
 )
 
 
-# =========================
-# 📊 WINDOW (FIX COMPLETO)
-# =========================
+# Métricas agregadas para la ventana temporal solicitada
 @router.get("/window")
 def metrics_window(
     minutes: int = Query(60, ge=1, le=1440),
@@ -22,7 +20,7 @@ def metrics_window(
 ):
     since = datetime.now(UTC) - timedelta(minutes=minutes)
 
-    # 🔢 Totales globales
+    # Totales agregados de tráfico y errores
     totals = db.query(
         func.sum(Metric.total).label("total"),
         func.sum(Metric.errors).label("errors"),
@@ -33,7 +31,7 @@ def metrics_window(
     total = totals.total or 0
     errors = totals.errors or 0
 
-    # 📊 Avg global REAL (ponderado)
+    # Latencia media global ponderada por volumen de tráfico
     weighted = db.query(
         func.sum(Metric.avg_response_time * Metric.total).label("weighted_sum"),
         func.sum(Metric.total).label("total_sum"),
@@ -41,6 +39,7 @@ def metrics_window(
         Metric.timestamp_minute >= since
     ).first()
 
+    # Evita sesgos calculando promedio ponderado y protege división por cero
     if weighted.total_sum and weighted.total_sum > 0:
         avg_global = weighted.weighted_sum / weighted.total_sum
     else:
@@ -48,6 +47,7 @@ def metrics_window(
 
     # 🐢 Endpoints más lentos
     slow = db.query(
+        # Ranking de endpoints con mayor latencia media
         Metric.endpoint,
         func.avg(Metric.avg_response_time).label("avg_response_time")
     ).filter(
@@ -75,9 +75,7 @@ def metrics_window(
     }
 
 
-# =========================
-# 📈 TIMESERIES
-# =========================
+# Serie temporal de métricas
 @router.get("/timeseries")
 def metrics_timeseries(
     minutes: int = Query(120, ge=1, le=1440),
@@ -86,7 +84,7 @@ def metrics_timeseries(
     now = datetime.now(UTC).replace(second=0, microsecond=0)
     since = now - timedelta(minutes=minutes)
 
-    # 🔹 1. Traer datos reales
+    # Consulta agregada por minuto
     rows = db.query(
         Metric.timestamp_minute,
         func.sum(Metric.total).label("total"),
@@ -103,16 +101,17 @@ def metrics_timeseries(
         Metric.timestamp_minute
     ).all()
 
-    # 🔹 2. Convertir a dict para lookup rápido
+    # Índice temporal para completar huecos en la serie
     data_map = {
         r.timestamp_minute.replace(tzinfo=None): r
         for r in rows
     }
 
-    # 🔹 3. Generar TODOS los minutos
+    # Reconstrucción continua de la serie, rellenando minutos vacíos
     series = []
     current = since
 
+    # Garantiza continuidad temporal incluso si faltan muestras en base de datos
     while current <= now:
         row = data_map.get(
             current.replace(tzinfo=None)

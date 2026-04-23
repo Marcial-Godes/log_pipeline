@@ -19,6 +19,7 @@ redis_client = redis.Redis.from_url(
 )
 
 
+# Normaliza timestamps entrantes a datetime con zona UTC
 def parse_timestamp(ts):
     if not ts:
         return datetime.now(UTC)
@@ -42,9 +43,7 @@ def process_log(data):
         status = data.get("status_code")
         response_time = data.get("response_time")
 
-        # =========================
-        # 🧾 GUARDAR LOG
-        # =========================
+        # GUARDAR LOG
         log = Log(
             endpoint=endpoint,
             method=data.get("method"),
@@ -58,18 +57,16 @@ def process_log(data):
         db.add(log)
         db.commit()
 
-        # =========================
-        # 📊 REDIS METRICS
-        # =========================
+        # Actualización de métricas temporales en Redis
         pipe = redis_client.pipeline()
 
         pipe.incr(f"metrics:{minute}:total")
 
         if status >= 400:
-            # global errors
+            # Acumulador global de errores
             pipe.incr(f"metrics:{minute}:errors")
 
-            # per endpoint errors
+            # Errores acumulados por endpoint
             pipe.hincrby(
                 f"metrics:{minute}:errors_by_endpoint",
                 endpoint,
@@ -96,9 +93,7 @@ def process_log(data):
 
         pipe.execute()
 
-        # =========================
-        # 💾 PERSISTENCIA
-        # =========================
+        # Persistencia agregada de métricas en PostgreSQL
         total = int(
             redis_client.hget(f"metrics:{minute}:endpoints", endpoint) or 0
         )
@@ -119,6 +114,7 @@ def process_log(data):
 
         minute_dt = datetime.strptime(minute, "%Y-%m-%dT%H:%M").replace(tzinfo=UTC)
 
+        # Si la métrica del minuto existe se actualiza; si no, se crea
         existing = db.execute(
             select(Metric).where(
                 Metric.timestamp_minute == minute_dt,
@@ -142,9 +138,7 @@ def process_log(data):
 
         db.commit()
 
-        # =========================
-        # 📡 WEBSOCKET
-        # =========================
+        # WEBSOCKET
         redis_client.publish(
             CHANNEL_NAME,
             json.dumps({"type": "new_log", "data": data})
@@ -159,12 +153,13 @@ def process_log(data):
         db.close()
 
 
-# 🔥 ESTA ES LA CLAVE QUE TE FALTA
+# Worker consumidor de Redis que procesa logs en bucle
 def worker():
     print("🚀 Worker started...")
 
     while True:
         try:
+            # Espera bloqueante por nuevos logs en la cola Redis
             item = redis_client.blpop(QUEUE_NAME, timeout=5)
 
             if item:
