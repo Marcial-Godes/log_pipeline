@@ -803,8 +803,8 @@ const detectClient = (ua) => {
       dataKey="avg_response_time"
       stroke="#60a5fa"
       strokeWidth={2.5}
-      name="Latency"
-      dot={{ r: 4 }}
+      name="Latency (s)"
+      dot={{ r: 2 }}
     />
     </>
   )}
@@ -817,8 +817,8 @@ const detectClient = (ua) => {
       dataKey="errors"
       stroke="#ef4444"
       strokeWidth={2.5}
-      name="Errors"
-      dot={{ r: 4 }}
+      name="Error count"
+      dot={{ r: 2 }}
     />
   )}
 
