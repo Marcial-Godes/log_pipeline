@@ -21,8 +21,10 @@ TEST_NET_POOLS = {
 
 
 def generate_fake_ip():
-    prefix = random.choice(TEST_NET_POOLS)
-    last_octet = random.randint(10, 250)
+    prefix = random.choice(
+        list(TEST_NET_POOLS.values())
+    )
+    last_octet = random.randint(10,250)
     return f"{prefix}.{last_octet}"
 
 
@@ -44,7 +46,6 @@ async def create_log(
 
     # enrich
     log_dict["ip"] = generate_fake_ip()
-    log_dict["ip"] = request.client.host if request.client else "unknown"
     log_dict["user_agent"] = request.headers.get("user-agent", "unknown")
 
     # ✅ async correctamente
