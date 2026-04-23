@@ -13,25 +13,6 @@ router = APIRouter(
 
 
 # =========================
-# 🧪 DEBUG
-# =========================
-@router.get("/db-test")
-def test_db(db: Session = Depends(get_db)):
-    data = db.query(Metric).order_by(Metric.id.desc()).limit(15).all()
-
-    return [
-        {
-            "minute": str(m.timestamp_minute),
-            "endpoint": m.endpoint,
-            "total": m.total,
-            "errors": m.errors,
-            "avg": m.avg_response_time,
-        }
-        for m in data
-    ]
-
-
-# =========================
 # 📊 WINDOW (FIX COMPLETO)
 # =========================
 @router.get("/window")
