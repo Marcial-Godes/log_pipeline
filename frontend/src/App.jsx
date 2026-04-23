@@ -110,6 +110,21 @@ const getSeverity = (e) => {
   return "normal";
 };
 
+const getLocationFromIp = (ip) => {
+    if (!ip) return "🌍 Unknown";
+
+    if (ip.startsWith("203.0.113"))
+      return "🇪🇸 Barcelona";
+
+    if (ip.startsWith("198.51.100"))
+      return "🇺🇸 Virginia";
+
+    if (ip.startsWith("192.0.2"))
+      return "🇩🇪 Berlin";
+
+    return "🌍 Unknown";
+  };
+
 const detectClient = (ua) => {
   if (!ua){
     return {
@@ -146,25 +161,11 @@ const detectClient = (ua) => {
   }
 
 
-    const getLocationFromIp = (ip) => {
-    if (!ip) return "🌍 Unknown";
-
-    if (ip.startsWith("203.0.113"))
-      return "🇪🇸 Barcelona";
-
-    if (ip.startsWith("198.51.100"))
-      return "🇺🇸 Virginia";
-
-    if (ip.startsWith("192.0.2"))
-      return "🇩🇪 Berlin";
-
-    return "🌍 Unknown";
-  };
+    
 
   return {
     browser,
-    os,
-    location: null
+    os
   };
 };
 
