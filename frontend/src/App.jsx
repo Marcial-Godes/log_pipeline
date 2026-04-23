@@ -27,9 +27,55 @@ import {
 // Endpoints de API y WebSocket (fallback local para desarrollo)
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+const formatTimeSafe = (value) => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (!isNaN(d))
+      return d.toLocaleTimeString();
+    return value;
+  };
+
 const WS_URL = API_URL
   .replace("https://", "wss://")
   .replace("http://", "ws://");
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || !payload.length) return null;
+  const labelMap = {
+    avg_response_time: "Latency (s)",
+    latency_ok: "Latency",
+    latency_warn: "Latency",
+    latency_crit: "Latency",
+    errors: "Errors",
+  };
+
+  return (
+    <div
+      style={{
+        background: "#0F172AF2",
+        border: "1px solid #94A3B826",
+        padding: "10px 14px",
+        borderRadius: "10px",
+        color: "#e2e8f0",
+      }}
+    >
+      <div style={{ fontSize: "11px", color: "#94a3b8" }}>
+        🕒 {formatTimeSafe(label)}
+      </div>
+
+      {payload.map((p, i) => (
+        <div key={i} style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>{labelMap[p.dataKey] || p.dataKey}</span>
+          <span>
+            {p.dataKey === "errors"
+              ? p.value
+              : `${p.value.toFixed(3)}s`}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 
 function App() {
@@ -40,11 +86,11 @@ function App() {
   const [timeSeries, setTimeSeries] = useState([]);
 
   const [selectedEndpoint, setSelectedEndpoint] = useState(
-    localStorage.getItem("endpoint") || "ALL"
+    () => localStorage.getItem("endpoint") || "ALL"
   );
 
   const [selectedMinutes, setSelectedMinutes] = useState(
-    Number(localStorage.getItem("minutes")) || 5
+    () => Number(localStorage.getItem("minutes")) || 5
   );
 
   const [errorCount, setErrorCount] = useState(0);
@@ -213,13 +259,6 @@ const detectClient = (ua) => {
     return new Date(ts).toLocaleTimeString();
   };
 
-  const formatTimeSafe = (value) => {
-    if (!value) return "";
-    const d = new Date(value);
-    if (!isNaN(d)) return d.toLocaleTimeString();
-    return value;
-  };
-
   const getSystemHealth = () => {
     if (errorRate > 12 || avgResponseTime > 1.2) return "critical";
     if (errorRate > 5 || avgResponseTime > 0.6) return "warning";
@@ -278,45 +317,6 @@ const detectClient = (ua) => {
     body: JSON.stringify(payload),
   });
 
-};
-
-  const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload || !payload.length) return null;
-
-  const labelMap = {
-    avg_response_time: "Latency (s)",
-    latency_ok: "Latency",
-    latency_warn: "Latency",
-    latency_crit: "Latency",
-    errors: "Errors",
-  };
-
-  return (
-    <div
-      style={{
-        background: "#0F172AF2",
-        border: "1px solid #94A3B826",
-        padding: "10px 14px",
-        borderRadius: "10px",
-        color: "#e2e8f0",
-      }}
-    >
-      <div style={{ fontSize: "11px", color: "#94a3b8" }}>
-        🕒 {formatTimeSafe(label)}
-      </div>
-
-      {payload.map((p, i) => (
-        <div key={i} style={{ display: "flex", justifyContent: "space-between" }}>
-          <span>{labelMap[p.dataKey] || p.dataKey}</span>
-          <span>
-            {p.dataKey === "errors"
-              ? p.value
-              : `${p.value.toFixed(3)}s`}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
 };
 
   // Carga inicial del histórico de alertas desde backend
@@ -622,7 +622,6 @@ const detectClient = (ua) => {
         <div className="panel events-panel">
           <h2>Eventos</h2>
           {events.map((e, i) => {
-  const isError = e.status_code >= 400;
   const client = detectClient(e.user_agent);
   const geoLocation = getLocationFromIp(e.ip);
 
@@ -632,7 +631,7 @@ const detectClient = (ua) => {
       className="item"
       style={{
         borderLeft: `4px solid ${
-          isError ? "#ef4444" : "#22c55e"
+          e.status_code >= 400 ? "#ef4444" : "#22c55e"
         }`,
         padding: "14px 14px 14px 16px"
       }}
