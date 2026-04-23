@@ -50,20 +50,16 @@ function App() {
   const [total, setTotal] = useState(0);
   const [avgResponseTime, setAvgResponseTime] = useState(0);
 
-  const [showLatency, setShowLatency] = useState(true);
-  const [showErrors, setShowErrors] = useState(true);  
-
-  const criticalAlerts = alerts.filter(
-    a => a.type === "alert"
-  ).length;
+  const [showLatency] = useState(true);
+  const [showErrors] = useState(true);
 
   const slowestEndpoint = slowData[0]?.endpoint || "-";
   const slowestLatency = slowData[0]?.avg_response_time || 0;
 
   const availability =
-    total > 0
-      ? (100 - errorRate).toFixed(2)
-      : "100.00";
+  total > 0
+    ? 100 - errorRate
+    : 100;
 
   const endpointsList = [
     "ALL",
