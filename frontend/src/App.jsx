@@ -146,11 +146,11 @@ const detectClient = (ua) => {
   }
 
   const locations = [
-  "🇪🇸 Barcelona",
-  "🇩🇪 Berlin",
-  "🇺🇸 Virginia",
-  "🇫🇷 Paris"
-];
+    "🇪🇸 Barcelona",
+    "🇩🇪 Berlin",
+    "🇺🇸 Virginia",
+    "🇫🇷 Paris"
+  ];
 
   return {
     browser,

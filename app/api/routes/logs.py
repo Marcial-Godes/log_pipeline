@@ -16,14 +16,12 @@ TEST_NET_POOLS = {
     "🇪🇸 Barcelona": "203.0.113",
     "🇺🇸 Virginia": "198.51.100",
     "🇩🇪 Berlin": "192.0.2",
-    "🇫🇷 Paris": "203.0.113",
+    "🇫🇷 Paris": "198.51.100",
 }
 
 
-def generate_fake_ip():
-    prefix = random.choice(
-        list(TEST_NET_POOLS.values())
-    )
+def generate_fake_ip(location):
+    prefix = TEST_NET_POOLS[location]
     last_octet = random.randint(10,250)
     return f"{prefix}.{last_octet}"
 
@@ -45,7 +43,11 @@ async def create_log(
         log_dict["timestamp"] = datetime.now(UTC).isoformat()
 
     # enrich
-    log_dict["ip"] = generate_fake_ip()
+    location = random.choice(
+        list(TEST_NET_POOLS.keys())
+    )
+
+    log_dict["ip"] = generate_fake_ip(location)
     log_dict["user_agent"] = request.headers.get("user-agent", "unknown")
 
     # ✅ async correctamente
