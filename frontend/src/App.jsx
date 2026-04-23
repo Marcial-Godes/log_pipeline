@@ -409,7 +409,7 @@ const detectClient = (ua) => {
 
   return (
     <div className="container">
-      <h1 style={{ marginBottom: "40px" }}>🚀 Real-Time Observability Dashboard</h1>
+      <h1 style={{ marginBottom: "40px" }}>Real-Time Observability Dashboard</h1>
 
       {/* HEADER MÁS RESPIRADO */}
       <div
@@ -423,7 +423,7 @@ const detectClient = (ua) => {
         }}
       >
         <div>
-          ⏱ Ventana:
+          Ventana:
           <select
             value={selectedMinutes}
             onChange={(e) => setSelectedMinutes(Number(e.target.value))}
@@ -437,7 +437,7 @@ const detectClient = (ua) => {
         </div>
 
         <div>
-          📍 Endpoint:
+          Endpoint:
           <select
             value={selectedEndpoint}
             onChange={(e) => setSelectedEndpoint(e.target.value)}
@@ -521,19 +521,19 @@ const detectClient = (ua) => {
       {/* MÁS ESPACIO ENTRE BLOQUES */}
       <div style={{ marginBottom: "30px" }} className="grid">
         <div className="panel">
-          <h6>Total Eventos</h6>
+          <h2>Total Eventos</h2>
           <div className="metric">{total}</div>
         </div>
 
         <div className="panel">
-          <h2>❌ Errores</h2>
+          <h2>Errores</h2>
           <div className="metric" style={{ color: "#ef4444" }}>
             {errorCount}
           </div>
         </div>
 
         <div className="panel">
-          <h2>⏱ Avg Response Time</h2>
+          <h2>Avg Response Time</h2>
           <div
             className="metric"
             style={{ color: getLatencyColor(avgResponseTime) }}
@@ -544,7 +544,7 @@ const detectClient = (ua) => {
       </div>
 
       <div style={{ marginBottom: "30px" }} className="panel error-rate-panel">
-        <h2>⚠️ Error Rate</h2>
+        <h2>Error Rate</h2>
         <div
           className="metric"
           style={{ color: getErrorRateColor(errorRate) }}
@@ -556,7 +556,7 @@ const detectClient = (ua) => {
       {/* RESTO SIN TOCAR */}
       <div className="grid">
         <div className="panel events-panel">
-          <h4>Eventos</h4>
+          <h2>Eventos</h2>
           {events.map((e, i) => {
   const isError = e.status_code >= 400;
   const client = detectClient(e.user_agent);
@@ -731,13 +731,13 @@ const detectClient = (ua) => {
         </div>
 
         <div className="panel alerts-panel">
-          <h5>Alertas</h5>
+          <h2>Alertas</h2>
           {alerts.map((a, i) => (
             <div key={i} className={`item ${a.type}`}>
               <div>
                 {a.type === "alert"
-                  ? "🚨 Critical error-rate alert"
-                  : "🟢 System recovered"}
+                  ? "Critical error-rate alert"
+                  : "System recovered"}
               </div>
 
               <div style={{ fontSize: "12px", opacity: 0.7 }}>
@@ -749,7 +749,7 @@ const detectClient = (ua) => {
       </div>
 
       <div className="panel">
-        <h3>Evolución</h3>
+        <h2>Evolución</h2>
 
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timeSeries}>
