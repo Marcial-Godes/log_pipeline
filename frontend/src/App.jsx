@@ -173,7 +173,7 @@ const getLocationFromIp = (ip) => {
       return "🇪🇸 Barcelona";
 
     if (ip.startsWith("198.51.100"))
-      return "🇺🇸 Virginia";
+      return "🇺🇸 Nevada";
 
     if (ip.startsWith("192.0.2"))
       return "🇩🇪 Berlin";
