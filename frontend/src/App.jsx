@@ -52,9 +52,6 @@ function App() {
   const [total, setTotal] = useState(0);
   const [avgResponseTime, setAvgResponseTime] = useState(0);
 
-  const [showLatency] = useState(true);
-  const [showErrors] = useState(true);
-
   // Indicadores derivados calculados a partir de las métricas actuales
   const slowestEndpoint = slowData[0]?.endpoint || "-";
   const slowestLatency = slowData[0]?.avg_response_time || 0;
@@ -858,7 +855,6 @@ const detectClient = (ua) => {
   <Tooltip content={<CustomTooltip />} />
   <Legend />
 
-  {showLatency && (
     <Line
       yAxisId="left"
       type="monotone"
@@ -868,9 +864,7 @@ const detectClient = (ua) => {
       name="Latency (s)"
       dot={{ r: 2 }}
     />
-  )}
 
-  {showErrors && (
     <Line
       yAxisId="right"
       type="monotone"
@@ -880,7 +874,6 @@ const detectClient = (ua) => {
       name="Error count"
       dot={{ r: 2 }}
     />
-  )}
 
   <ReferenceLine
     y={0.6}
