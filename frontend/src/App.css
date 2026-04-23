@@ -115,11 +115,11 @@ select option {
 }
 
 .tag.warning{
-background:rgba(245,158,11,.15);
+background:#F59E0B26;
 color:#f59e0b;
 }
 
 .tag.critical{
-background:rgba(239,68,68,.15);
+background:#EF444426;
 color:#ef4444;
 }

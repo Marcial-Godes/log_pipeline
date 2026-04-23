@@ -73,7 +73,18 @@ function App() {
 
   return <Globe size={18} strokeWidth={2.2} />;
 };
-  
+
+  const locations = [
+    "🇪🇸 Barcelona",
+    "🇩🇪 Berlin",
+    "🇺🇸 Virginia",
+    "🇫🇷 Paris"
+    ];
+
+    location:
+      locations[
+        Math.floor(Math.random()*locations.length)
+      ]
 
   useEffect(() => {
     localStorage.setItem("minutes", selectedMinutes);
@@ -253,8 +264,8 @@ const detectClient = (ua) => {
   return (
     <div
       style={{
-        background: "rgba(15, 23, 42, 0.95)",
-        border: "1px solid rgba(148, 163, 184, 0.15)",
+        background: "#0F172AF2",
+        border: "1px solid #94A3B826",
         padding: "10px 14px",
         borderRadius: "10px",
         color: "#e2e8f0",
@@ -378,7 +389,7 @@ const detectClient = (ua) => {
 
   return (
     <div className="container">
-      <h1 style={{ marginBottom: "40px" }}>🚀 LOG DASHBOARD TEST 999</h1>
+      <h1 style={{ marginBottom: "40px" }}>🚀 Real-Time Observability Dashboard</h1>
 
       {/* HEADER MÁS RESPIRADO */}
       <div
@@ -445,11 +456,11 @@ const detectClient = (ua) => {
           )}
           {getSystemHealth() === "critical" && (
             <span style={{
-              background: "rgba(239,68,68,0.15)",
+              background: "#EF444418",
               color: "#ef4444",
               padding: "6px 14px",
               borderRadius: "999px",
-              border: "1px solid rgba(239,68,68,0.3)",
+              border: "1px solid #EF44444D",
             }}>
               🔴 Critical
             </span>
@@ -575,10 +586,10 @@ const detectClient = (ua) => {
   style={{
     background:
       getSeverity(e) === "critical"
-        ? "rgba(239,68,68,.15)"
+        ? "#EF444426"
         : getSeverity(e) === "degraded"
-        ? "rgba(245,158,11,.15)"
-        : "rgba(34,197,94,.15)",
+        ? "#F59E0B26"
+        : "#22C55E26",
 
     color:
       getSeverity(e) === "critical"
