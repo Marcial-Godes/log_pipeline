@@ -123,7 +123,7 @@ const getLocationFromIp = (ip) => {
       return "🇩🇪 Berlin";
 
     if (ip.startsWith("203.0.114"))
-      return "🗼 Paris";
+      return "🇫🇷 Paris";
 
     return "🌍 Unknown";
   };
@@ -138,12 +138,26 @@ const detectClient = (ua) => {
 
   const s = ua.toLowerCase();
 
-  let browser="Other";
+  let browser = "Unknown";
 
-  if (s.includes("edg")) browser="Edge";
-  else if (s.includes("firefox")) browser="Firefox";
-  else if (s.includes("chrome")) browser="Chrome";
-  else if (s.includes("safari")) browser="Safari";
+  if (s.includes("brave"))
+    browser = "Brave";
+  else if (s.includes("edg"))
+    browser = "Edge";
+  else if (s.includes("opr") || s.includes("opera"))
+    browser = "Opera";
+  else if (s.includes("vivaldi"))
+    browser = "Vivaldi";
+  else if (s.includes("firefox"))
+    browser = "Firefox";
+  else if (
+    s.includes("chrome") &&
+    !s.includes("edg") &&
+    !s.includes("opr")
+  )
+    browser = "Chrome";
+  else if (s.includes("safari"))
+    browser = "Safari";
 
   let os="Other";
 
