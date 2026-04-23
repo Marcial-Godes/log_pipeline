@@ -274,6 +274,7 @@ const detectClient = (ua) => {
   if (!active || !payload || !payload.length) return null;
 
   const labelMap = {
+    avg_response_time: "Latency (s)",
     latency_ok: "Latency",
     latency_warn: "Latency",
     latency_crit: "Latency",
