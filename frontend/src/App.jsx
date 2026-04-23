@@ -155,9 +155,9 @@ const detectClient = (ua) => {
     !s.includes("edg") &&
     !s.includes("opr")
   )
-    browser = "Chrome";
-  else if (s.includes("safari"))
     browser = "Chromium";
+  else if (s.includes("safari"))
+    browser = "Safari";
 
   let os="Other";
 
