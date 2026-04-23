@@ -579,14 +579,21 @@ const detectClient = (ua) => {
           <h2>Availability</h2>
           <div
             className="metric"
-            style={{ color:"#22c55e" }}
+            style={{
+            color:
+            availability > 99
+            ? "#22c55e"
+            : availability > 95
+            ? "#f59e0b"
+            : "#ef4444"
+            }}
           >
             {availability}%
           </div>
         </div>
 
         <div className="panel">
-          <h2>Slowest Endpoint</h2>
+          <h2>Worst Latency Endpoint</h2>
 
           <div
             className="metric"
