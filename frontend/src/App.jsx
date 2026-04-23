@@ -122,7 +122,7 @@ const getLocationFromIp = (ip) => {
     if (ip.startsWith("192.0.2"))
       return "🇩🇪 Berlin";
 
-    if (ip.startsWith("198.51.100"))
+    if (ip.startsWith("203.0.114"))
       return "🇫🇷 Paris";
 
     return "🌍 Unknown";
