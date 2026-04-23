@@ -145,22 +145,26 @@ const detectClient = (ua) => {
     os="Linux";
   }
 
-  const locations = [
-    "🇪🇸 Barcelona",
-    "🇩🇪 Berlin",
-    "🇺🇸 Virginia",
-    "🇫🇷 Paris"
-  ];
+
+    const getLocationFromIp = (ip) => {
+    if (!ip) return "🌍 Unknown";
+
+    if (ip.startsWith("203.0.113"))
+      return "🇪🇸 Barcelona";
+
+    if (ip.startsWith("198.51.100"))
+      return "🇺🇸 Virginia";
+
+    if (ip.startsWith("192.0.2"))
+      return "🇩🇪 Berlin";
+
+    return "🌍 Unknown";
+  };
 
   return {
     browser,
     os,
-    location:
-      locations[
-        Math.floor(
-          Math.random() * locations.length
-        )
-      ]
+    location: null
   };
 };
 
@@ -540,6 +544,7 @@ const detectClient = (ua) => {
           {events.map((e, i) => {
   const isError = e.status_code >= 400;
   const client = detectClient(e.user_agent);
+  const geoLocation = getLocationFromIp(e.ip);
 
   return (
     <div
@@ -647,7 +652,7 @@ const detectClient = (ua) => {
       </div>
 
       <div style={{ opacity:.75 }}>
-        {client.location}
+        {geoLocation}
       </div>
 
       <div style={{ opacity:.55 }}>
