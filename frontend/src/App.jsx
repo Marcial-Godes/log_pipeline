@@ -51,7 +51,19 @@ function App() {
   const [avgResponseTime, setAvgResponseTime] = useState(0);
 
   const [showLatency, setShowLatency] = useState(true);
-  const [showErrors, setShowErrors] = useState(true);
+  const [showErrors, setShowErrors] = useState(true);  
+
+  const criticalAlerts = alerts.filter(
+    a => a.type === "alert"
+  ).length;
+
+  const slowestEndpoint = slowData[0]?.endpoint || "-";
+  const slowestLatency = slowData[0]?.avg_response_time || 0;
+
+  const availability =
+    total > 0
+      ? (100 - errorRate).toFixed(2)
+      : "100.00";
 
   const endpointsList = [
     "ALL",
@@ -518,16 +530,23 @@ const detectClient = (ua) => {
 </button>
       </div>
 
-      {/* MÁS ESPACIO ENTRE BLOQUES */}
-      <div style={{ marginBottom: "30px" }} className="grid">
+      <div
+        style={{ marginBottom:"30px" }}
+        className="metrics-grid"
+      >
         <div className="panel">
-          <h2>Total Eventos</h2>
-          <div className="metric">{total}</div>
+          <h2>Total Events</h2>
+          <div className="metric">
+            {total}
+          </div>
         </div>
 
         <div className="panel">
-          <h2>Errores</h2>
-          <div className="metric" style={{ color: "#ef4444" }}>
+          <h2>Errors</h2>
+          <div
+            className="metric"
+            style={{ color:"#ef4444" }}
+          >
             {errorCount}
           </div>
         </div>
@@ -536,21 +555,60 @@ const detectClient = (ua) => {
           <h2>Avg Response Time</h2>
           <div
             className="metric"
-            style={{ color: getLatencyColor(avgResponseTime) }}
+            style={{
+              color:getLatencyColor(avgResponseTime)
+            }}
           >
             {avgResponseTime}s
           </div>
         </div>
-      </div>
 
-      <div style={{ marginBottom: "30px" }} className="panel error-rate-panel">
-        <h2>Error Rate</h2>
-        <div
-          className="metric"
-          style={{ color: getErrorRateColor(errorRate) }}
-        >
-          {Math.round(errorRate)}%
+        <div className="panel">
+          <h2>Error Rate</h2>
+          <div
+            className="metric"
+            style={{
+              color:getErrorRateColor(errorRate)
+            }}
+          >
+            {Math.round(errorRate)}%
+          </div>
         </div>
+
+        <div className="panel">
+          <h2>Availability</h2>
+          <div
+            className="metric"
+            style={{ color:"#22c55e" }}
+          >
+            {availability}%
+          </div>
+        </div>
+
+        <div className="panel">
+          <h2>Slowest Endpoint</h2>
+
+          <div
+            className="metric"
+            style={{
+              fontSize:"22px",
+              color:"#f59e0b"
+            }}
+          >
+            {slowestEndpoint}
+          </div>
+
+          <div
+            style={{
+              marginTop:"8px",
+              opacity:.8
+            }}
+          >
+            {slowestLatency.toFixed(3)}s
+          </div>
+
+        </div>
+
       </div>
 
       {/* RESTO SIN TOCAR */}
