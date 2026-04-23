@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy.orm import Session
 from datetime import datetime, UTC
 import json
 import random
 
-from app.core.database import get_db
 from app.core.redis_client import redis_client
 from app.schemas.log import LogCreateSchema
 
@@ -14,7 +12,7 @@ QUEUE_NAME = "log_queue"
 
 TEST_NET_POOLS = {
     "🇪🇸 Barcelona": "203.0.113",
-    "🇺🇸 Virginia": "198.51.100",
+    "🇺🇸 Nevada": "198.51.100",
     "🇩🇪 Berlin": "192.0.2",
     "🇫🇷 Paris": "203.0.114",
 }
@@ -30,7 +28,6 @@ def generate_fake_ip(location):
 async def create_log(
     log: LogCreateSchema,
     request: Request,
-    db: Session = Depends(get_db),
 ):
     log_dict = log.model_dump()
 
