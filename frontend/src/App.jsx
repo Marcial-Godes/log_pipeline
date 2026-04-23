@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 
+// Endpoints de API y WebSocket (fallback local para desarrollo)
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const WS_URL = API_URL
@@ -32,6 +33,7 @@ const WS_URL = API_URL
 
 
 function App() {
+  // Estado principal del dashboard: eventos en tiempo real, alertas y métricas
   const [events, setEvents] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [slowData, setSlowData] = useState([]);
@@ -53,6 +55,7 @@ function App() {
   const [showLatency] = useState(true);
   const [showErrors] = useState(true);
 
+  // Indicadores derivados calculados a partir de las métricas actuales
   const slowestEndpoint = slowData[0]?.endpoint || "-";
   const slowestLatency = slowData[0]?.avg_response_time || 0;
 
@@ -100,6 +103,7 @@ function App() {
     1.5
   );
   
+  // Helpers de clasificación visual y severidad
   const getMethodColor = (method) => {
     if (method==="GET") return "#60a5fa";
   if (method==="POST") return "#22c55e";
@@ -118,6 +122,7 @@ const getSeverity = (e) => {
   return "normal";
 };
 
+// Geolocalización simulada basada en rangos IP de prueba
 const getLocationFromIp = (ip) => {
     if (!ip) return "🌍 Unknown";
 
@@ -136,6 +141,7 @@ const getLocationFromIp = (ip) => {
     return "🌍 Unknown";
   };
 
+  // Parser ligero del user-agent para identificar navegador y sistema operativo
 const detectClient = (ua) => {
   if (!ua){
     return {
@@ -223,7 +229,6 @@ const detectClient = (ua) => {
     return "healthy";
   };
 
-  // 🔥 BOTONES TEST
   const sendTestLog = async (type = "ok") => {
 
   const okEndpoints = [
@@ -317,6 +322,7 @@ const detectClient = (ua) => {
   );
 };
 
+  // Carga inicial del histórico de alertas desde backend
   useEffect(() => {
     const fetchAlerts = async () => {
       const res = await fetch(`${API_URL}/alerts`);
@@ -335,6 +341,7 @@ const detectClient = (ua) => {
     fetchAlerts();
   }, []);
 
+  // Stream en tiempo real de logs y alertas vía WebSocket
   useEffect(() => {
     const ws = new WebSocket(`${WS_URL}/ws`);
 
@@ -364,6 +371,7 @@ const detectClient = (ua) => {
     return () => ws.close();
   }, []);
 
+  // Polling periódico de métricas agregadas del dashboard
   useEffect(() => {
     const fetchMetrics = async () => {
       let url = `${API_URL}/metrics/window?minutes=${selectedMinutes}`;
@@ -419,7 +427,6 @@ const detectClient = (ua) => {
     <div className="container">
       <h1 style={{ marginBottom: "40px" }}>Real-Time Observability Dashboard</h1>
 
-      {/* HEADER MÁS RESPIRADO */}
       <div
         style={{
           display: "flex",
@@ -614,7 +621,6 @@ const detectClient = (ua) => {
 
       </div>
 
-      {/* RESTO SIN TOCAR */}
       <div className="grid">
         <div className="panel events-panel">
           <h2>Eventos</h2>
@@ -634,7 +640,6 @@ const detectClient = (ua) => {
         padding: "14px 14px 14px 16px"
       }}
     >
-      {/* HEADER */}
       <div
         style={{
           display: "flex",
@@ -691,7 +696,6 @@ const detectClient = (ua) => {
 </span>
       </div>
 
-      {/* META */}
       <div
         style={{
           fontSize: "14px",
@@ -704,7 +708,6 @@ const detectClient = (ua) => {
         🕒 {formatTime(e.timestamp)}
       </div>
 
-      {/* CLIENT */}
     <div
       style={{
         display:"flex",
@@ -737,7 +740,6 @@ const detectClient = (ua) => {
       </div>
     </div>
 
-      {/* TAGS */}
       <div
         style={{
           display:"flex",
@@ -814,7 +816,7 @@ const detectClient = (ua) => {
 
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timeSeries}>
-  {/* ZONAS */}
+  {/* Bandas de umbral de latencia: saludable, warning y crítica */}
   <ReferenceArea
     yAxisId="left"
     y1={0}
@@ -856,9 +858,7 @@ const detectClient = (ua) => {
   <Tooltip content={<CustomTooltip />} />
   <Legend />
 
-  {/* LATENCY */}
   {showLatency && (
-    <>
     <Line
       yAxisId="left"
       type="monotone"
@@ -868,10 +868,8 @@ const detectClient = (ua) => {
       name="Latency (s)"
       dot={{ r: 2 }}
     />
-    </>
   )}
 
-  {/* ERRORS */}
   {showErrors && (
     <Line
       yAxisId="right"
@@ -912,6 +910,7 @@ const detectClient = (ua) => {
         </ResponsiveContainer>
       </div>
 
+      {/* Ranking de endpoints con mayor latencia */}
       <div className="panel">
         <h2>Top Slow Endpoints</h2>
 

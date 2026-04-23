@@ -10,7 +10,7 @@
   min-height: 100vh;
 }
 
-/* 🔥 TÍTULO PRINCIPAL */
+/* Título principal del dashboard */
 h1 {
   font-size: 50px;
   font-weight: 600;
@@ -18,14 +18,14 @@ h1 {
   text-align: center;
 }
 
-/* 🔥 GRID (ahora 3 columnas) */
+/* Layout principal de paneles */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
 }
 
-/* 🔥 TARJETAS */
+/* Estilo base de tarjetas/paneles */
 .panel {
   background: #1e293b;
   padding: 16px;
@@ -33,7 +33,7 @@ h1 {
   margin-bottom: 20px;
 }
 
-/* 🔥 TÍTULOS TARJETAS */
+/* Títulos internos de paneles */
 .panel h2 {
   margin-bottom: 10px;
   font-size: 14px;
@@ -42,39 +42,24 @@ h1 {
   letter-spacing: 0.3px;
 }
 
-/* 🔥 MÉTRICAS */
+/* KPIs principales */
 .metric {
   font-size: 28px;
   font-weight: 600;
 }
 
-/* 🔥 Banner alerta */
-.alert-banner {
-  margin-bottom: 20px;
-  background: #7f1d1d;
-  color: #fecaca;
-  border: 1px solid #ef4444;
-}
-
-/* 🔥 Error rate full width */
-.error-rate-panel {
-  margin-bottom: 20px;
-}
-
-/* 🔥 Scroll en eventos y alertas */
+/* Scroll para paneles con listas dinámicas */
 .events-panel,
 .alerts-panel {
   max-height: 300px;
   overflow-y: auto;
 }
 
-/* items */
 .item {
   padding: 6px 0;
   border-bottom: 1px solid #334155;
 }
 
-/* alertas */
 .alert {
   color: #ef4444;
 }
@@ -83,7 +68,7 @@ h1 {
   color: #22c55e;
 }
 
-/* scrollbar */
+/* Personalización del scrollbar */
 .events-panel::-webkit-scrollbar,
 .alerts-panel::-webkit-scrollbar {
   width: 6px;
@@ -105,27 +90,10 @@ select {
   cursor: pointer;
 }
 
-/* Opciones del desplegable */
+/* Estilo de opciones de filtros */
 select option {
   background-color: #0f172a;
   color: #e2e8f0;
-}
-
-.tag{
-  padding:4px 10px;
-  border-radius:999px;
-  font-size:11px;
-  background:#334155;
-}
-
-.tag.warning{
-background:#F59E0B26;
-color:#f59e0b;
-}
-
-.tag.critical{
-background:#EF444426;
-color:#ef4444;
 }
 
 body {
@@ -136,12 +104,14 @@ body {
     sans-serif;
 }
 
+/* Grid responsive de métricas resumen */
 .metrics-grid{
 display:grid;
 grid-template-columns:repeat(6,1fr);
 gap:20px;
 }
 
+/* Breakpoints responsive */
 @media (max-width:1400px){
 .metrics-grid{
 grid-template-columns:repeat(3,1fr);
