@@ -735,8 +735,8 @@ const detectClient = (ua) => {
             <div key={i} className={`item ${a.type}`}>
               <div>
                 {a.type === "alert"
-                  ? "🚨 High error rate"
-                  : "🟢 Recovered"}
+                  ? "🚨 Critical error-rate alert"
+                  : "🟢 System recovered"}
               </div>
 
               <div style={{ fontSize: "12px", opacity: 0.7 }}>
