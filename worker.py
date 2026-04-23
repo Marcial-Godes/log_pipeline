@@ -65,10 +65,7 @@ def process_log(data):
 
         pipe.incr(f"metrics:{minute}:total")
 
-        if 200 <= status < 300:
-            pipe.incr(f"metrics:{minute}:success")
-
-        elif status >= 400:
+        if status >= 400:
             # global errors
             pipe.incr(f"metrics:{minute}:errors")
 

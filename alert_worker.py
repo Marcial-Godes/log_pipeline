@@ -18,6 +18,9 @@ CHECK_INTERVAL = 3
 
 COOLDOWN_SECONDS = 15
 
+STATUS_KEY = "system:error_rate_status"
+LAST_ALERT_TS_KEY = "system:last_alert_ts"
+
 # ✅ Redis desde settings (NO hardcode)
 redis_client = redis.Redis.from_url(
     settings.REDIS_URL,
@@ -53,15 +56,6 @@ Base.metadata.create_all(bind=engine)
 def format_minute(dt):
     return dt.strftime("%Y-%m-%dT%H:%M")
 
-
-def get_status_key():
-    return "system:error_rate_status"
-
-
-def get_last_alert_ts_key():
-    return "system:last_alert_ts"
-
-
 # =========================
 # 📊 ERROR RATE
 # =========================
@@ -90,8 +84,8 @@ def calculate_error_rate():
 # 🚨 ALERT HANDLER
 # =========================
 def handle_error_rate_alert():
-    status_key = get_status_key()
-    last_ts_key = get_last_alert_ts_key()
+    status_key = STATUS_KEY
+    last_ts_key = LAST_ALERT_TS_KEY
 
     current_status = redis_client.get(status_key) or "ok"
     last_ts = int(redis_client.get(last_ts_key) or 0)
