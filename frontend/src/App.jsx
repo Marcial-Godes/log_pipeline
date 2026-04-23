@@ -74,18 +74,6 @@ function App() {
   return <Globe size={18} strokeWidth={2.2} />;
 };
 
-  const locations = [
-    "🇪🇸 Barcelona",
-    "🇩🇪 Berlin",
-    "🇺🇸 Virginia",
-    "🇫🇷 Paris"
-    ];
-
-    location:
-      locations[
-        Math.floor(Math.random()*locations.length)
-      ]
-
   useEffect(() => {
     localStorage.setItem("minutes", selectedMinutes);
   }, [selectedMinutes]);
@@ -157,10 +145,22 @@ const detectClient = (ua) => {
     os="Linux";
   }
 
+  const locations = [
+  "🇪🇸 Barcelona",
+  "🇩🇪 Berlin",
+  "🇺🇸 Virginia",
+  "🇫🇷 Paris"
+];
+
   return {
     browser,
     os,
-    location:"🇪🇸 Barcelona"
+    location:
+      locations[
+        Math.floor(
+          Math.random() * locations.length
+        )
+      ]
   };
 };
 
@@ -677,7 +677,8 @@ const detectClient = (ua) => {
           </span>
         )}
 
-        {e.status_code >= 500 && (
+        {e.status_code >= 500 &&
+          getSeverity(e) !== "critical" && (
           <span
             style={{
               background:"#ef444422",
