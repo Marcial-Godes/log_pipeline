@@ -122,6 +122,9 @@ const getLocationFromIp = (ip) => {
     if (ip.startsWith("192.0.2"))
       return "🇩🇪 Berlin";
 
+    if (ip.startsWith("172.18.0"))
+      return "🇫🇷 Paris";
+
     return "🌍 Unknown";
   };
 
@@ -159,9 +162,6 @@ const detectClient = (ua) => {
   else if (s.includes("linux")){
     os="Linux";
   }
-
-
-    
 
   return {
     browser,
