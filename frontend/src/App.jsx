@@ -146,7 +146,11 @@ const detectClient = (ua) => {
     os="Linux";
   }
 
-  return { browser, os };
+  return {
+    browser,
+    os,
+    location:"🇪🇸 Barcelona"
+  };
 };
 
   const timeAgo = (timestamp) => {
@@ -567,10 +571,6 @@ const detectClient = (ua) => {
           → {e.status_code}
         </span>
 
-        <span>
-  → {e.status_code}
-</span>
-
 <span
   style={{
     background:
@@ -588,9 +588,9 @@ const detectClient = (ua) => {
         : "#22c55e",
 
     border:"1px solid currentColor",
-    padding:"4px 10px",
+    padding:"3px 8px",
     borderRadius:"999px",
-    fontSize:"12px",
+    fontSize:"11px",
     fontWeight:"700"
   }}
 >
@@ -612,31 +612,37 @@ const detectClient = (ua) => {
       </div>
 
       {/* CLIENT */}
+    <div
+      style={{
+        display:"flex",
+        flexDirection:"column",
+        gap:"6px",
+        alignItems:"flex-start",
+        marginBottom:"10px"
+      }}
+    >
       <div
         style={{
           display:"flex",
           alignItems:"center",
-          gap:"12px",
-          fontSize:"14px",
-          opacity:.75,
-          marginBottom:"10px"
+          gap:"6px"
         }}
       >
-        <span
-          style={{
-            display:"flex",
-            alignItems:"center",
-            gap:"6px"
-          }}
-        >
-          {getOsIcon(client.os)}
-          {client.os} • {client.browser}
-        </span>
+        {getOsIcon(client.os)}
 
         <span>
-          🌍 {e.ip}
+          {client.os} • {client.browser}
         </span>
       </div>
+
+      <div style={{ opacity:.75 }}>
+        {client.location}
+      </div>
+
+      <div style={{ opacity:.55 }}>
+        🌍 {e.ip}
+      </div>
+    </div>
 
       {/* TAGS */}
       <div
@@ -656,7 +662,7 @@ const detectClient = (ua) => {
               fontSize:"12px"
             }}
           >
-            slow
+            LATENCY
           </span>
         )}
 
@@ -670,13 +676,13 @@ const detectClient = (ua) => {
               fontSize:"12px"
             }}
           >
-            5xx
+            SERVER 5XX
           </span>
         )}
 
         <span
           style={{
-            background:"rgba(96,165,250,.15)",
+            background:"#60A5FA26",
             color:"#60a5fa",
             padding:"4px 8px",
             borderRadius:"999px",
