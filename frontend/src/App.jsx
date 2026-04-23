@@ -521,7 +521,7 @@ const detectClient = (ua) => {
       {/* MÁS ESPACIO ENTRE BLOQUES */}
       <div style={{ marginBottom: "30px" }} className="grid">
         <div className="panel">
-          <h2>📊 Total Eventos</h2>
+          <h6>Total Eventos</h6>
           <div className="metric">{total}</div>
         </div>
 
@@ -556,7 +556,7 @@ const detectClient = (ua) => {
       {/* RESTO SIN TOCAR */}
       <div className="grid">
         <div className="panel events-panel">
-          <h2>📡 Eventos</h2>
+          <h4>Eventos</h4>
           {events.map((e, i) => {
   const isError = e.status_code >= 400;
   const client = detectClient(e.user_agent);
@@ -731,7 +731,7 @@ const detectClient = (ua) => {
         </div>
 
         <div className="panel alerts-panel">
-          <h2>🚨 Alertas</h2>
+          <h5>Alertas</h5>
           {alerts.map((a, i) => (
             <div key={i} className={`item ${a.type}`}>
               <div>
@@ -749,7 +749,7 @@ const detectClient = (ua) => {
       </div>
 
       <div className="panel">
-        <h2>📈 Evolución</h2>
+        <h3>Evolución</h3>
 
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timeSeries}>
