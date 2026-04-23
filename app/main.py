@@ -12,7 +12,7 @@ from app.websocket.manager import manager
 from app.core.database import Base, engine
 from app.core.settings import settings
 
-from app.api.routes import logs, analytics, metrics
+from app.api.routes import logs, metrics
 from app.api.routes.alerts import router as alerts_router
 
 # 🔥 IMPORTANTE
@@ -119,6 +119,5 @@ app.add_middleware(
 # 📦 ROUTERS
 # =========================
 app.include_router(logs.router)
-app.include_router(analytics.router)
 app.include_router(metrics.router)
 app.include_router(alerts_router)
