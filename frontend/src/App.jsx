@@ -552,7 +552,7 @@ const detectClient = (ua) => {
         </div>
 
         <div className="panel">
-          <h2>Avg Response Time</h2>
+          <h2>Avg Latency</h2>
           <div
             className="metric"
             style={{
@@ -588,7 +588,7 @@ const detectClient = (ua) => {
             : "#ef4444"
             }}
           >
-            {availability}%
+            {Math.round(availability)}%
           </div>
         </div>
 
