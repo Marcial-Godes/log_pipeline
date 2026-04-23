@@ -852,12 +852,12 @@ const detectClient = (ua) => {
       </div>
 
       <div className="panel">
-        <h2>🐢 Endpoints lentos</h2>
+        <h2>Top Slow Endpoints</h2>
 
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={slowData}>
             <XAxis dataKey="endpoint" />
-            <YAxis />
+            <YAxis tickFormatter={(v) => `${v.toFixed(1)}s`} />
 
             <Tooltip
               content={<CustomTooltip />}
