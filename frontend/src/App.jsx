@@ -611,7 +611,7 @@ const detectClient = (ua) => {
               opacity:.8
             }}
           >
-            {slowestLatency.toFixed(3)}s
+            {slowestLatency.toFixed(2)}s
           </div>
 
         </div>
