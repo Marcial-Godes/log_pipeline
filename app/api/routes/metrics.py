@@ -39,15 +39,13 @@ def metrics_window(
         Metric.timestamp_minute >= since
     ).first()
 
-    # Evita sesgos calculando promedio ponderado y protege división por cero
-    if weighted.total_sum and weighted.total_sum > 0:
+    if weighted.total_sum:
         avg_global = weighted.weighted_sum / weighted.total_sum
     else:
         avg_global = 0
 
-    # 🐢 Endpoints más lentos
+    # Endpoints con mayor latencia media
     slow = db.query(
-        # Ranking de endpoints con mayor latencia media
         Metric.endpoint,
         func.avg(Metric.avg_response_time).label("avg_response_time")
     ).filter(
@@ -111,7 +109,6 @@ def metrics_timeseries(
     series = []
     current = since
 
-    # Garantiza continuidad temporal incluso si faltan muestras en base de datos
     while current <= now:
         row = data_map.get(
             current.replace(tzinfo=None)
@@ -119,14 +116,14 @@ def metrics_timeseries(
 
         if row:
             series.append({
-                "minute": str(current),
+                "minute": current.isoformat(),
                 "total": int(row.total or 0),
                 "errors": int(row.errors or 0),
                 "avg_response_time": float(row.avg_response_time or 0),
             })
         else:
             series.append({
-                "minute": str(current),
+                "minute": current.isoformat(),
                 "total": 0,
                 "errors": 0,
                 "avg_response_time": 0.0,

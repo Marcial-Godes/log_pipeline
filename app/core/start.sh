@@ -1,12 +1,10 @@
 #!/bin/sh
 
-echo "⏳ Waiting for DB..."
+echo "Waiting for DB..."
 sleep 5
 
-echo "🚀 Running migrations..."
+echo "Running migrations..."
 alembic upgrade head
 
-echo "🔥 Starting API..."
-
-# 🔥 USAR PUERTO DE RENDER
+echo "Starting API..."
 uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}

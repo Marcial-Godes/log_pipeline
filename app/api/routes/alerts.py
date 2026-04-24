@@ -11,7 +11,6 @@ router = APIRouter(prefix="/alerts", tags=["alerts"])
 # Devuelve las alertas más recientes en orden descendente
 @router.get("/")
 def get_alerts(
-    # Número máximo de alertas a devolver
     limit: int = Query(default=20),
     db: Session = Depends(get_db),
 ):
@@ -23,7 +22,6 @@ def get_alerts(
         .all()
     )
 
-    # Serialización ligera para respuesta API
     return [
         {
             "id": a.id,

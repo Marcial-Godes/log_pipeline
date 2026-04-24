@@ -85,13 +85,9 @@ function App() {
   const [slowData, setSlowData] = useState([]);
   const [timeSeries, setTimeSeries] = useState([]);
 
-  const [selectedEndpoint, setSelectedEndpoint] = useState(
-    () => localStorage.getItem("endpoint") || "ALL"
-  );
+  const [selectedEndpoint, setSelectedEndpoint] = useState("ALL");
 
-  const [selectedMinutes, setSelectedMinutes] = useState(
-    () => Number(localStorage.getItem("minutes")) || 5
-  );
+  const [selectedMinutes, setSelectedMinutes] = useState(5);
 
   const [errorCount, setErrorCount] = useState(0);
   const [errorRate, setErrorRate] = useState(0);
@@ -103,9 +99,9 @@ function App() {
   const slowestLatency = slowData[0]?.avg_response_time || 0;
 
   const availability =
-  total > 0
-    ? 100 - errorRate
-    : 100;
+    total > 0
+      ? Math.max(99, 100 - errorRate)
+      : 100;
 
   const endpointsList = [
     "ALL",
@@ -128,13 +124,6 @@ function App() {
   return <Globe size={18} strokeWidth={2.2} />;
 };
 
-  useEffect(() => {
-    localStorage.setItem("minutes", selectedMinutes);
-  }, [selectedMinutes]);
-
-  useEffect(() => {
-    localStorage.setItem("endpoint", selectedEndpoint);
-  }, [selectedEndpoint]);
 
   const maxLatency = Math.max(
     ...(timeSeries.length ? timeSeries.map(d => d.avg_response_time || 0) : [0]),
@@ -380,13 +369,15 @@ const detectClient = (ua) => {
       const res = await fetch(url);
       const data = await res.json();
 
+      console.log("WINDOW DATA", data);
+
       setSlowData(data.slowest_endpoints || []);
       setErrorCount(data.errors || 0);
       setErrorRate(data.error_rate || 0);
       setTotal(data.total || 0);
       setAvgResponseTime(data.avg_response_time_global || 0);
 
-      let url2 = `${API_URL}/metrics/timeseries?minutes=${selectedMinutes * 2}`;
+      let url2 = `${API_URL}/metrics/timeseries?minutes=${selectedMinutes}`
 
       if (selectedEndpoint !== "ALL") {
         url2 += `&endpoint=${selectedEndpoint}`;
@@ -394,11 +385,19 @@ const detectClient = (ua) => {
 
       const res2 = await fetch(url2);
       const data2 = await res2.json();
-      setTimeSeries(data2.series || []);
+      
+      console.log(data2.series);
+
+      setTimeSeries(
+  (data2.series || []).map(item => ({
+    ...item,
+    minute_label: item.minute
+  }))
+);
     };
 
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 3000);
+    const interval = setInterval(fetchMetrics, 10000);
     return () => clearInterval(interval);
   }, [selectedEndpoint, selectedMinutes]);
 
@@ -837,7 +836,11 @@ const detectClient = (ua) => {
 
   <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
 
-  <XAxis dataKey="minute" tickFormatter={formatTimeSafe} />
+  <XAxis
+    dataKey="minute_label"
+    interval="preserveStartEnd"
+    minTickGap={50}
+  />
 
   <YAxis
     yAxisId="left"
@@ -866,32 +869,53 @@ const detectClient = (ua) => {
 
     <Line
       yAxisId="right"
-      type="monotone"
+      type="linear"
       dataKey="errors"
       stroke="#ef4444"
-      strokeWidth={2.5}
+      strokeWidth={2}
+      dot={false}
+      opacity={0.75}
       name="Error count"
-      dot={{ r: 2 }}
-    />
+      />
 
   <ReferenceLine
-    y={0.6}
-    yAxisId="left"
-    stroke="#f59e0b"
-    strokeDasharray="4 4"
-    label={{ value: "warning", position: "right", fill: "#f59e0b" }}
-  />
+  y={0.6}
+  yAxisId="left"
+  stroke="#f59e0b"
+  strokeDasharray="4 4"
+  label={{
+    value: "warning",
+    position: "right",
+    fill: "#f59e0b"
+  }}
+/>
 
-  <ReferenceLine
-    y={1.1}
-    yAxisId="left"
-    stroke="#ef4444"
-    strokeDasharray="4 4"
-    label={{ value: "critical", position: "right", fill: "#ef4444" }}
-  />
+<ReferenceLine
+  y={0.75}
+  yAxisId="left"
+  stroke="#60a5fa"
+  strokeDasharray="5 5"
+  label={{
+    value: "SLO",
+    position: "right",
+    fill: "#60a5fa"
+  }}
+/>
+
+<ReferenceLine
+  y={1.1}
+  yAxisId="left"
+  stroke="#ef4444"
+  strokeDasharray="4 4"
+  label={{
+    value: "critical",
+    position: "right",
+    fill: "#ef4444"
+  }}
+/>
 
   <Brush
-    dataKey="minute"
+    dataKey="minute_label"
     height={8}
     stroke="#334155"
     travellerWidth={8}

@@ -80,13 +80,10 @@ def calculate_error_rate():
 
 
 # ALERT HANDLER
-
 def handle_error_rate_alert():
-    STATUS_KEY
-    LAST_ALERT_TS_KEY
 
-    current_status = redis_client.get(status_key) or "ok"
-    last_ts = int(redis_client.get(last_ts_key) or 0)
+    current_status = redis_client.get(STATUS_KEY) or "ok"
+    last_ts = int(redis_client.get(LAST_ALERT_TS_KEY) or 0)
 
     now_ts = int(time.time())
 
@@ -105,8 +102,8 @@ def handle_error_rate_alert():
             if now_ts - last_ts < COOLDOWN_SECONDS:
                 return
 
-            redis_client.set(status_key, "alert")
-            redis_client.set(last_ts_key, now_ts)
+            redis_client.set(STATUS_KEY, "alert")
+            redis_client.set(LAST_ALERT_TS_KEY, now_ts)
 
             print(f"🚨 ALERT → error_rate={error_rate_rounded}")
 
@@ -143,8 +140,8 @@ def handle_error_rate_alert():
             if now_ts - last_ts < COOLDOWN_SECONDS:
                 return
 
-            redis_client.set(status_key, "ok")
-            redis_client.set(last_ts_key, now_ts)
+            redis_client.set(STATUS_KEY, "ok")
+            redis_client.set(LAST_ALERT_TS_KEY, now_ts)
 
             print(f"🟢 RECOVERY → error_rate={error_rate_rounded}")
 

@@ -22,11 +22,10 @@ TEST_NET_POOLS = {
 # Genera una IP simulada dentro del rango asignado a la ubicación
 def generate_fake_ip(location):
     prefix = TEST_NET_POOLS[location]
-    last_octet = random.randint(10,250)
+    last_octet = random.randint(10, 250)
     return f"{prefix}.{last_octet}"
 
 
-# Endpoint de ingesta de logs
 @router.post("/")
 async def create_log(
     log: LogCreateSchema,

@@ -6,14 +6,13 @@ from app.core.settings import settings
 
 print("🔗 Database configured:", settings.DATABASE_URL)
 
-# Engine principal de conexión a PostgreSQL
 engine = create_engine(
     settings.DATABASE_URL,
     # Verifica conexiones muertas antes de reutilizarlas
     pool_pre_ping=True,
 )
 
-# Factoría de sesiones SQLAlchemy por request o worker
+# Sesiones de base de datos para API y workers
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
@@ -24,11 +23,10 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 
-# Dependencia FastAPI para abrir y cerrar sesiones de base de datos
+# Dependencia para gestionar sesiones por petición
 def get_db():
     session = SessionLocal()
     try:
         yield session
     finally:
-        # Garantiza cierre de sesión aunque falle la petición
         session.close()
