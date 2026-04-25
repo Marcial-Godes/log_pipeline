@@ -428,7 +428,7 @@ const detectClient = (ua) => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          gap: "24px",
+          gap: "32px",
           marginBottom: "30px",
           flexWrap: "wrap",
         }}
@@ -496,6 +496,21 @@ const detectClient = (ua) => {
               🔴 Critical
             </span>
           )}
+          {getSystemHealth() === "critical" && errorRate > 10 && (
+            <span
+              style={{
+                background:"#7f1d1d33",
+                color:"#f87171",
+                padding:"6px 14px",
+                borderRadius:"999px",
+                border:"1px solid #EF44444D",
+                fontWeight:"700",
+                marginLeft:"8px",
+              }}
+            >
+              Incident Active
+            </span>
+          )}
         </div>
                   <button
   onClick={() => sendTestLog("ok")}
@@ -541,7 +556,7 @@ const detectClient = (ua) => {
         </div>
 
         <div className="panel">
-          <h2>Errors</h2>
+          <h2>Error Volume</h2>
           <div
             className="metric"
             style={{ color:"#ef4444" }}
@@ -551,7 +566,7 @@ const detectClient = (ua) => {
         </div>
 
         <div className="panel">
-          <h2>Avg Latency</h2>
+          <h2>P95 Latency</h2>
           <div
             className="metric"
             style={{
@@ -575,7 +590,7 @@ const detectClient = (ua) => {
         </div>
 
         <div className="panel">
-          <h2>Availability</h2>
+          <h2>Uptime</h2>
           <div
             className="metric"
             style={{
@@ -839,7 +854,7 @@ const detectClient = (ua) => {
   <XAxis
     dataKey="minute_label"
     interval="preserveStartEnd"
-    minTickGap={50}
+    minTickGap={0}
   />
 
   <YAxis
@@ -897,7 +912,7 @@ const detectClient = (ua) => {
   strokeDasharray="5 5"
   label={{
     value: "SLO",
-    position: "right",
+    position: "insideTopRight",
     fill: "#60a5fa"
   }}
 />
