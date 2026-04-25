@@ -421,7 +421,18 @@ const detectClient = (ua) => {
 
   return (
     <div className="container">
-      <h1 style={{ marginBottom: "40px" }}>Real-Time Observability Dashboard v2 TEST</h1>
+      <h1 style={{ marginBottom: "40px" }}>Real-Time Observability Dashboard</h1>
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "-25px",
+          marginBottom: "30px",
+          fontSize: "12px",
+          opacity: 0.65
+        }}
+      >
+        Build: {import.meta.env.VITE_GIT_SHA}
+      </div>
 
       <div
         style={{
