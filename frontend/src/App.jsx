@@ -421,7 +421,7 @@ const detectClient = (ua) => {
 
   return (
     <div className="container">
-      <h1 style={{ marginBottom: "40px" }}>Real-Time Observability Dashboard</h1>
+      <h1 style={{ marginBottom: "40px" }}>Real-Time Observability Dashboard v2 TEST</h1>
 
       <div
         style={{
