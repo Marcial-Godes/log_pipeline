@@ -79,7 +79,6 @@ const WS_URL = API_URL
 
 
 function App() {
-  // Estado principal del dashboard: eventos en tiempo real, alertas y métricas
   const [events, setEvents] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [slowData, setSlowData] = useState([]);
@@ -94,7 +93,6 @@ function App() {
   const [total, setTotal] = useState(0);
   const [avgResponseTime, setAvgResponseTime] = useState(0);
 
-  // Indicadores derivados calculados a partir de las métricas actuales
   const slowestEndpoint = slowData[0]?.endpoint || "-";
   const slowestLatency = slowData[0]?.avg_response_time || 0;
 
@@ -135,7 +133,6 @@ function App() {
     1.5
   );
   
-  // Helpers de clasificación visual y severidad
   const getMethodColor = (method) => {
     if (method==="GET") return "#60a5fa";
   if (method==="POST") return "#22c55e";
@@ -154,7 +151,6 @@ const getSeverity = (e) => {
   return "normal";
 };
 
-// Geolocalización simulada basada en rangos IP de prueba
 const getLocationFromIp = (ip) => {
     if (!ip) return "🌍 Unknown";
 
@@ -173,7 +169,6 @@ const getLocationFromIp = (ip) => {
     return "🌍 Unknown";
   };
 
-  // Parser ligero del user-agent para identificar navegador y sistema operativo
 const detectClient = (ua) => {
   if (!ua){
     return {
@@ -254,6 +249,7 @@ const detectClient = (ua) => {
     return "healthy";
   };
 
+  // Inyección manual de logs para simular escenarios del sistema
   const sendTestLog = async (type = "ok") => {
 
   const okEndpoints = [
@@ -308,7 +304,6 @@ const detectClient = (ua) => {
 
 };
 
-  // Carga inicial del histórico de alertas desde backend
   useEffect(() => {
     const fetchAlerts = async () => {
       const res = await fetch(`${API_URL}/alerts`);
@@ -327,7 +322,6 @@ const detectClient = (ua) => {
     fetchAlerts();
   }, []);
 
-  // Stream en tiempo real de logs y alertas vía WebSocket
   useEffect(() => {
     const ws = new WebSocket(`${WS_URL}/ws`);
 
@@ -357,7 +351,6 @@ const detectClient = (ua) => {
     return () => ws.close();
   }, []);
 
-  // Polling periódico de métricas agregadas del dashboard
   useEffect(() => {
     const fetchMetrics = async () => {
       let url = `${API_URL}/metrics/window?minutes=${selectedMinutes}`;
@@ -369,7 +362,6 @@ const detectClient = (ua) => {
       const res = await fetch(url);
       const data = await res.json();
 
-      console.log("WINDOW DATA", data);
 
       setSlowData(data.slowest_endpoints || []);
       setErrorCount(data.errors || 0);
@@ -386,8 +378,6 @@ const detectClient = (ua) => {
       const res2 = await fetch(url2);
       const data2 = await res2.json();
       
-      console.log(data2.series);
-
       setTimeSeries(
   (data2.series || []).map(item => ({
     ...item,
@@ -577,7 +567,7 @@ const detectClient = (ua) => {
         </div>
 
         <div className="panel">
-          <h2>P95 Latency</h2>
+          <h2>Avg Latency</h2>
           <div
             className="metric"
             style={{
@@ -837,7 +827,6 @@ const detectClient = (ua) => {
 
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={timeSeries}>
-  {/* Bandas de umbral de latencia: saludable, warning y crítica */}
   <ReferenceArea
     yAxisId="left"
     y1={0}
@@ -952,7 +941,6 @@ const detectClient = (ua) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Ranking de endpoints con mayor latencia */}
       <div className="panel">
         <h2>Top Slow Endpoints</h2>
 

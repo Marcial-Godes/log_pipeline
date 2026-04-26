@@ -16,6 +16,7 @@ RECOVERY_THRESHOLD = 5
 WINDOW_MINUTES = 5
 CHECK_INTERVAL = 3
 
+# Cooldown para evitar tormentas de alertas duplicadas
 COOLDOWN_SECONDS = 15
 
 STATUS_KEY = "system:error_rate_status"
@@ -28,7 +29,7 @@ redis_client = redis.Redis.from_url(
 )
 
 
-# Espera activa hasta que PostgreSQL esté disponible
+# Espera a que PostgreSQL esté disponible antes de arrancar
 def wait_for_db():
     print("⏳ Esperando a Postgres...")
 
@@ -49,12 +50,10 @@ wait_for_db()
 Base.metadata.create_all(bind=engine)
 
 
-# Utilidades auxiliares
 def format_minute(dt):
     return dt.strftime("%Y-%m-%dT%H:%M")
 
 
-# ERROR RATE
 
 def calculate_error_rate():
     now = datetime.now(UTC)
@@ -62,7 +61,7 @@ def calculate_error_rate():
     totals = 0
     errors = 0
 
-    # Calcula error rate sobre una ventana móvil de N minutos
+    # Cálculo de error rate sobre ventana deslizante
     for i in range(WINDOW_MINUTES):
         minute_dt = now - timedelta(minutes=i)
         minute = format_minute(minute_dt)
@@ -79,7 +78,6 @@ def calculate_error_rate():
 
 
 
-# ALERT HANDLER
 def handle_error_rate_alert():
 
     current_status = redis_client.get(STATUS_KEY) or "ok"
@@ -176,7 +174,6 @@ def handle_error_rate_alert():
         db.close()
 
 
-# Bucle principal del worker de alertas
 def run():
     print("🚀 Alert Worker started...")
 

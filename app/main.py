@@ -23,7 +23,6 @@ app = FastAPI()
 
 CHANNEL_NAME = "logs_channel"
 
-# Cliente Redis asíncrono usado por la API y la difusión vía WebSocket
 redis_client = redis.from_url(
     settings.REDIS_URL,
     decode_responses=True
@@ -40,7 +39,6 @@ def health():
     return {"status": "ok"}
 
 
-# WebSocket para emitir eventos en tiempo real al frontend
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
@@ -53,7 +51,7 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 
-# Suscripción a Redis Pub/Sub para reenviar eventos a clientes WebSocket
+# Redis Pub/Sub para difundir eventos a clientes WebSocket
 async def redis_listener():
     while True:
         try:
@@ -79,7 +77,7 @@ async def redis_listener():
             await asyncio.sleep(2)
 
 
-# Inicializa los procesos en segundo plano para logs y alertas
+# Workers temporales arrancados al iniciar la aplicación
 def start_background_workers():
     print("🚀 Starting background workers...")
 
@@ -87,7 +85,6 @@ def start_background_workers():
     threading.Thread(target=run_alert_worker, daemon=True).start()
 
 
-# Arranque de tablas, listener Redis y workers de background
 @app.on_event("startup")
 async def startup_event():
     Base.metadata.create_all(bind=engine)
@@ -97,7 +94,6 @@ async def startup_event():
     start_background_workers()
 
 
-# Configuración CORS para permitir acceso del frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -107,7 +103,6 @@ app.add_middleware(
 )
 
 
-# Registro de rutas de la API
 app.include_router(logs.router)
 app.include_router(metrics.router)
 app.include_router(alerts_router)

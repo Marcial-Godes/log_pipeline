@@ -143,6 +143,7 @@ def metrics_timeseries(
 
     current = since
 
+    # Rellena minutos vacíos para mantener continuidad en el gráfico
     while current <= now:
 
         row = data_map.get(
