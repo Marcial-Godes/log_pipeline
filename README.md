@@ -8,7 +8,7 @@
 
 Pipeline completo de ingestión, procesamiento, monitorización y visualización de logs en tiempo real, inspirado en conceptos utilizados en plataformas como Datadog, ELK y herramientas modernas de observabilidad.
 
-![Dashboard Demo](docs/dashboard-demo.gif)
+![Dashboard Demo](docs/Animation.gif)
 
 ---
 
