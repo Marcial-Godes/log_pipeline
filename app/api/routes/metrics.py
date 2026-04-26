@@ -12,7 +12,6 @@ router = APIRouter(
 )
 
 
-# Métricas agregadas para la ventana temporal solicitada
 @router.get("/window")
 def metrics_window(
     minutes: int = Query(60, ge=1, le=1440),
@@ -21,28 +20,27 @@ def metrics_window(
 ):
     since = datetime.now(UTC) - timedelta(minutes=minutes)
 
-    # Totales agregados de tráfico y errores
-    totals = db.query(
-        base_query = db.query(Metric).filter(
-    Metric.timestamp_minute >= since
-)
-
-if endpoint:
-    base_query = base_query.filter(
-        Metric.endpoint == endpoint
+    base_query = db.query(Metric).filter(
+        Metric.timestamp_minute >= since
     )
 
-totals = base_query.with_entities(
-    func.sum(Metric.total).label("total"),
-    func.sum(Metric.errors).label("errors"),
-).first()
+    if endpoint:
+        base_query = base_query.filter(
+            Metric.endpoint == endpoint
+        )
+
+    totals = base_query.with_entities(
+        func.sum(Metric.total).label("total"),
+        func.sum(Metric.errors).label("errors"),
+    ).first()
 
     total = totals.total or 0
     errors = totals.errors or 0
 
-    # Latencia media global ponderada por volumen de tráfico
     weighted = base_query.with_entities(
-        func.sum(Metric.avg_response_time * Metric.total).label("weighted_sum"),
+        func.sum(
+            Metric.avg_response_time * Metric.total
+        ).label("weighted_sum"),
         func.sum(Metric.total).label("total_sum"),
     ).first()
 
@@ -51,29 +49,29 @@ totals = base_query.with_entities(
     else:
         avg_global = 0
 
-    # Endpoints con mayor latencia media
-    slow = base_query.with_entities(
-    Metric.endpoint,
-    func.avg(Metric.avg_response_time).label("avg_response_time")
-).group_by(
-    Metric.endpoint
-).order_by(
-    func.avg(Metric.avg_response_time).desc()
-).limit(5).all()
-        Metric.endpoint,
-        func.avg(Metric.avg_response_time).label("avg_response_time")
-    ).filter(
-        Metric.timestamp_minute >= since
-    ).group_by(
-        Metric.endpoint
-    ).order_by(
-        func.avg(Metric.avg_response_time).desc()
-    ).limit(5).all()
+    slow = (
+        base_query.with_entities(
+            Metric.endpoint,
+            func.avg(
+                Metric.avg_response_time
+            ).label("avg_response_time")
+        )
+        .group_by(Metric.endpoint)
+        .order_by(
+            func.avg(
+                Metric.avg_response_time
+            ).desc()
+        )
+        .limit(5)
+        .all()
+    )
 
     slowest = [
         {
             "endpoint": s.endpoint,
-            "avg_response_time": float(s.avg_response_time or 0)
+            "avg_response_time": float(
+                s.avg_response_time or 0
+            )
         }
         for s in slow
     ]
@@ -81,61 +79,76 @@ totals = base_query.with_entities(
     return {
         "total": int(total),
         "errors": int(errors),
-        "error_rate": round((errors / total * 100), 2) if total > 0 else 0,
-        "avg_response_time_global": round(avg_global, 3),
+        "error_rate": round(
+            (errors / total * 100), 2
+        ) if total > 0 else 0,
+        "avg_response_time_global": round(
+            avg_global, 3
+        ),
         "slowest_endpoints": slowest
     }
 
 
-# Serie temporal de métricas
 @router.get("/timeseries")
 def metrics_timeseries(
     minutes: int = Query(120, ge=1, le=1440),
     endpoint: str | None = Query(None),
     db: Session = Depends(get_db)
 ):
-    now = datetime.now(UTC).replace(second=0, microsecond=0)
+    now = datetime.now(UTC).replace(
+        second=0,
+        microsecond=0
+    )
+
     since = now - timedelta(minutes=minutes)
 
-    # Consulta agregada por minuto
-    rows = db.query(
+    rows_query = db.query(
         Metric.timestamp_minute,
         func.sum(Metric.total).label("total"),
         func.sum(Metric.errors).label("errors"),
         (
-            func.sum(Metric.avg_response_time * Metric.total) /
-            func.nullif(func.sum(Metric.total), 0)
+            func.sum(
+                Metric.avg_response_time * Metric.total
+            )
+            /
+            func.nullif(
+                func.sum(Metric.total),
+                0
+            )
         ).label("avg_response_time"),
+    ).filter(
+        Metric.timestamp_minute >= since
     )
 
-rows_query = rows.filter(
-    Metric.timestamp_minute >= since
-)
+    if endpoint:
+        rows_query = rows_query.filter(
+            Metric.endpoint == endpoint
+        )
 
-if endpoint:
-    rows_query = rows_query.filter(
-        Metric.endpoint == endpoint
+    rows = (
+        rows_query
+        .group_by(Metric.timestamp_minute)
+        .order_by(Metric.timestamp_minute)
+        .all()
     )
 
-rows = rows_query.group_by(.group_by(
-        Metric.timestamp_minute
-    ).order_by(
-        Metric.timestamp_minute
-    ).all()
-
-    # Índice temporal para completar huecos en la serie
     data_map = {
-        r.timestamp_minute.replace(tzinfo=None): r
+        r.timestamp_minute.replace(
+            tzinfo=None
+        ): r
         for r in rows
     }
 
-    # Reconstrucción continua de la serie, rellenando minutos vacíos
     series = []
+
     current = since
 
     while current <= now:
+
         row = data_map.get(
-            current.replace(tzinfo=None)
+            current.replace(
+                tzinfo=None
+            )
         )
 
         if row:
@@ -143,7 +156,9 @@ rows = rows_query.group_by(.group_by(
                 "minute": current.isoformat(),
                 "total": int(row.total or 0),
                 "errors": int(row.errors or 0),
-                "avg_response_time": float(row.avg_response_time or 0),
+                "avg_response_time": float(
+                    row.avg_response_time or 0
+                ),
             })
         else:
             series.append({
@@ -155,4 +170,6 @@ rows = rows_query.group_by(.group_by(
 
         current += timedelta(minutes=1)
 
-    return {"series": series}
+    return {
+        "series": series
+    }
