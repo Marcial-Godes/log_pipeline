@@ -1,6 +1,14 @@
 # 🚀 Log Pipeline — Plataforma de Observabilidad en Tiempo Real
 
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+![React](https://img.shields.io/badge/React-Dashboard-61dafb)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Metrics-blue)
+![Redis](https://img.shields.io/badge/Redis-Streaming-red)
+
 Pipeline completo de ingestión, procesamiento, monitorización y visualización de logs en tiempo real, inspirado en conceptos utilizados en plataformas como Datadog, ELK y herramientas modernas de observabilidad.
+
+![Dashboard Demo](docs/dashboard-demo.gif)
 
 ---
 
@@ -236,11 +244,20 @@ Posibles iteraciones futuras:
 
 ---
 
-# 📌 Estado
+## Highlights
 
-✅ Proyecto funcional y desplegado.
+- Real-time log ingestion pipeline
+- Redis Pub/Sub event streaming
+- Automated anomaly detection
+- SLO latency visualization
+- WebSocket live observability dashboard
 
-Mantenido como pieza activa de portfolio.
+---
+
+## Estado del proyecto
+
+Proyecto completado como portfolio de observabilidad.
+Nuevas mejoras futuras se orientarán únicamente a evolución técnica.
 
 ---
 
