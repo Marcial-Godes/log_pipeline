@@ -1,104 +1,250 @@
-# 🚀 Log Pipeline — Monitorización en tiempo real
+# 🚀 Log Pipeline — Plataforma de Observabilidad en Tiempo Real
 
-Sistema completo de ingesta, procesamiento y visualización de logs en tiempo real, con generación de métricas agregadas, alertas automáticas y dashboard interactivo.
+Pipeline completo de ingestión, procesamiento, monitorización y visualización de logs en tiempo real, inspirado en conceptos utilizados en plataformas como Datadog, ELK y herramientas modernas de observabilidad.
 
 ---
 
 ## 📌 Descripción
 
-Este proyecto implementa un pipeline de observabilidad inspirado en herramientas como Datadog o ELK, permitiendo:
+Este proyecto simula una plataforma de observabilidad end-to-end capaz de:
 
-- Ingesta de logs vía API
-- Procesamiento asíncrono con Redis
-- Agregación de métricas por minuto
-- Detección de anomalías (errores / latencia)
-- Visualización en tiempo real (WebSocket)
-- Dashboard interactivo
+- Ingerir eventos vía API REST
+- Procesar logs en tiempo real con Redis Pub/Sub
+- Agregar métricas por ventanas temporales
+- Detectar anomalías automáticamente
+- Generar alertas y eventos de recuperación
+- Visualizar salud del sistema mediante dashboard interactivo
+- Consumir eventos en vivo vía WebSocket
 
----
-
-## 🧠 Arquitectura
-
-Cliente → FastAPI (/logs)
-        ↓
-      Redis (pub/sub)
-        ↓
-   Worker (procesamiento)
-        ↓
- PostgreSQL (metrics_aggregated)
-        ↓
-   FastAPI (/metrics)
-        ↓
- React Dashboard + WebSocket
+Más que una API CRUD, el objetivo fue construir un proyecto orientado a ingeniería backend y pensamiento sistémico.
 
 ---
 
-## ⚙️ Tecnologías
+# 🧠 Arquitectura
 
-### Backend
+```text
+Cliente
+  ↓
+FastAPI (/logs)
+  ↓
+Redis Pub/Sub
+  ↓
++---------------------+
+|                     |
+↓                     ↓
+Log Worker        Alert Worker
+|                     |
+↓                     ↓
+PostgreSQL        Alertas
+  ↓
+FastAPI (/metrics + websocket)
+  ↓
+Dashboard React en tiempo real
+```
+
+---
+
+# ⚙️ Stack Tecnológico
+
+## Backend
+
 - FastAPI
+- Python
 - SQLAlchemy
 - PostgreSQL
 - Redis
 - Alembic
 
-### Frontend
+## Frontend
+
 - React
 - Recharts
 - WebSockets
 
-### Infraestructura
-- Docker
-- Render (deploy)
+## Infraestructura
+
+- Docker / Docker Compose
+- Render
+- GitHub
 
 ---
 
-## 🔄 Flujo de datos
+# 📊 Funcionalidades
 
-1. El cliente envía logs a `/logs`
-2. Los logs se publican en Redis
-3. El worker consume los eventos:
-   - agrega métricas por minuto
-   - detecta errores y latencia alta
-4. Se guardan métricas en PostgreSQL
-5. El frontend consulta `/metrics`
-6. WebSocket envía eventos en tiempo real
+## Dashboard de Observabilidad
+
+Incluye monitorización en tiempo real de:
+
+- Total de eventos
+- Volumen de errores
+- Latencia media
+- Error rate
+- Disponibilidad (uptime)
+- Estado del sistema (Healthy / Warning / Critical)
+- Endpoints más lentos
+- Evolución temporal de errores y latencia
+- Umbral SLO e indicadores de incidente
 
 ---
 
-## ▶️ Ejecución en local
+## Agregación de Métricas
 
-### Backend
+Los logs se procesan y agregan por minuto para generar:
 
-cd app
-uvicorn app.main:app --reload
+- Request volume
+- Error counts
+- Error rate
+- Latencias ponderadas
+- Ranking de rendimiento por endpoint
 
-### Frontend
+Filtros soportados:
 
+- Ventanas temporales
+- Endpoint específico
+
+---
+
+## Sistema de Alertas
+
+Worker dedicado para detección automática de anomalías:
+
+- Alertas por error rate crítico
+- Eventos de recuperación automática
+- Cooldown para evitar alertas duplicadas
+
+---
+
+## Streaming en Vivo
+
+Actualización vía WebSocket de:
+
+- Nuevos eventos
+- Alertas activas
+- Recovery events
+
+Sin refresco de página.
+
+---
+
+# 🔄 Flujo de Datos
+
+1. Cliente envía un log a `/logs`
+2. Redis publica el evento
+3. Worker consume y agrega métricas
+4. Alert worker evalúa umbrales
+5. PostgreSQL persiste métricas
+6. Frontend consulta `/metrics`
+7. WebSocket transmite eventos en vivo
+
+---
+
+# 🧪 Generación de Tráfico de Prueba
+
+El repositorio incluye simulador para probar el pipeline completo en local:
+
+```bash
+python scripts/demo_generate_logs.py
+```
+
+Permite simular:
+
+- Tráfico normal
+- Errores 4xx / 5xx
+- Picos de latencia
+- Escenarios para disparar alertas
+- Datos para poblar el dashboard
+
+Útil para validar comportamiento end-to-end del sistema.
+
+---
+
+# ▶️ Ejecución Local
+
+## Backend
+
+```bash
+uvicorn main:app --reload
+```
+
+## Frontend
+
+```bash
 cd frontend
 npm install
 npm run dev
+```
+
+## Docker (opcional)
+
+```bash
+docker compose up --build
+```
 
 ---
 
-## 🌐 Demo
+# 🌐 Demo
 
-Deploy en Render:
-- API: https://logs-api-ull9.onrender.com
-- Frontend: https://log-pipeline-viff.onrender.com
+### Frontend
 
----
+https://log-pipeline-viff.onrender.com
 
-## 📊 Funcionalidades
+### API
 
-- Métricas en tiempo real
-- Detección de errores
-- Alertas automáticas
-- Visualización interactiva
-- WebSocket en vivo
+https://logs-api-ull9.onrender.com
 
 ---
 
-## 📌 Estado del proyecto
+# 🛠 Qué demuestra este proyecto
 
-Proyecto funcional en producción con mejoras continuas enfocadas a observabilidad y escalabilidad.
+Este proyecto pone foco en:
+
+- Arquitectura orientada a eventos
+- Procesamiento con workers en background
+- Observabilidad y monitorización
+- Integración API + WebSockets
+- Diseño backend más allá de CRUD
+- Patrones de fiabilidad e incident response
+
+---
+
+# 🎯 Objetivo del Proyecto
+
+Quería construir algo más cercano a ingeniería backend real que un proyecto típico de APIs.
+
+El foco fue trabajar conceptos como:
+
+- Streaming de datos
+- Métricas operacionales
+- Alerting
+- Señales de fiabilidad
+- Visualización en tiempo real
+
+En esencia, una versión simplificada de una plataforma de observabilidad.
+
+---
+
+# 🔭 Mejoras Futuras
+
+Posibles iteraciones futuras:
+
+- Exportación estilo Prometheus
+- Integración OpenTelemetry
+- Kafka en lugar de Redis Pub/Sub
+- Dashboards multi-tenant
+- Integración Grafana
+- Despliegue en Kubernetes
+
+---
+
+# 📌 Estado
+
+✅ Proyecto funcional y desplegado.
+
+Mantenido como pieza activa de portfolio.
+
+---
+
+## Autor
+
+Marcial Godes
+
