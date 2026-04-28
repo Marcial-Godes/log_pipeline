@@ -8,6 +8,8 @@
 
 Pipeline completo de ingestión, procesamiento, monitorización y visualización de logs en tiempo real, inspirado en conceptos utilizados en plataformas como Datadog, ELK y herramientas modernas de observabilidad.
 
+Proyecto de ingeniería de observabilidad inspirado en conceptos de Datadog / ELK.
+
 ![Dashboard Demo](docs/Animation.gif)
 
 ---
@@ -99,10 +101,10 @@ Incluye monitorización en tiempo real de:
 
 Los logs se procesan y agregan por minuto para generar:
 
-- Request volume
-- Error counts
+- Volumen de peticiones
+- Conteo de errores
 - Error rate
-- Latencias ponderadas
+- Latencias agregadas
 - Ranking de rendimiento por endpoint
 
 Filtros soportados:
@@ -128,7 +130,7 @@ Actualización vía WebSocket de:
 
 - Nuevos eventos
 - Alertas activas
-- Recovery events
+- Eventos de recuperación
 
 Sin refresco de página.
 
@@ -192,13 +194,13 @@ docker compose up --build
 
 # 🌐 Demo
 
-### Frontend
+### Frontend Dashboard
 
-https://log-pipeline-viff.onrender.com
+https://log-pipeline-dashboard.onrender.com
 
 ### API
 
-https://logs-api-ull9.onrender.com
+https://log-pipeline-api.onrender.com
 
 ---
 
@@ -215,11 +217,28 @@ Este proyecto pone foco en:
 
 ---
 
+# 🛡 Validación de Fiabilidad
+
+Validado bajo escenarios reales de fallo y recuperación:
+
+- Recuperación tras cold starts en Render free tier
+- Auto-reconexión de WebSocket tras wake-up del backend
+- Recuperación automática del dashboard tras suspensión del servicio
+- Simulación de incidentes mediante tráfico sintético
+- Validación de alertas y recovery events
+- Smoke tests y pruebas de resiliencia end-to-end
+
+**Validated against Render free-tier cold starts and WebSocket auto-recovery.**
+
+El proyecto fue probado explícitamente para seguir funcionando incluso tras suspensión por inactividad del backend.
+
+---
+
 # 🎯 Objetivo del Proyecto
 
-Quería construir algo más cercano a ingeniería backend real que un proyecto típico de APIs.
+Construir algo más cercano a ingeniería backend real que un proyecto típico de APIs.
 
-El foco fue trabajar conceptos como:
+Conceptos trabajados:
 
 - Streaming de datos
 - Métricas operacionales
@@ -233,8 +252,6 @@ En esencia, una versión simplificada de una plataforma de observabilidad.
 
 # 🔭 Mejoras Futuras
 
-Posibles iteraciones futuras:
-
 - Exportación estilo Prometheus
 - Integración OpenTelemetry
 - Kafka en lugar de Redis Pub/Sub
@@ -244,20 +261,13 @@ Posibles iteraciones futuras:
 
 ---
 
-## Highlights
-
-- Real-time log ingestion pipeline
-- Redis Pub/Sub event streaming
-- Automated anomaly detection
-- SLO latency visualization
-- WebSocket live observability dashboard
-
----
-
 ## Estado del proyecto
 
-Proyecto completado como portfolio de observabilidad.
-Nuevas mejoras futuras se orientarán únicamente a evolución técnica.
+Proyecto completado como portfolio backend/observability.
+
+Features core, comportamiento resiliente y despliegue quedan considerados cerrados.
+
+Cambios futuros serían evolutivos.
 
 ---
 
