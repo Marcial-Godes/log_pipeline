@@ -171,3 +171,6 @@ def worker():
         except Exception as e:
             print("❌ Worker error:", e)
             time.sleep(1)
+            
+if __name__ == "__main__":
+    worker()

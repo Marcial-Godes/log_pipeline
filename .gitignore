@@ -1,39 +1,19 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.sqlite3
-*.py[cod]
-.pytest_cache/
-
-# Virtual env
+# Entornos virtuales
 .venv/
 venv/
-env/
 
-# Environment variables
-.env
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
 
-# Logs
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Node
-node_modules/
-dist/
-
-# Vite
-.vite/
-
-# Docker
-*.pid
+# Variables de entorno
+.env*
+!.env.example
 
 # IDE
 .vscode/
 .idea/
 
-frontend/dist
+# Sistema
+.DS_Store
