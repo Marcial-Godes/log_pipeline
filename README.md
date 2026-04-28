@@ -1,346 +1,262 @@
-# ⚡ Event-Driven Notification Service
+# 🚀 Log Pipeline — Plataforma de Observabilidad en Tiempo Real
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-API-green)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Persistence-blue)
-![Redis](https://img.shields.io/badge/Redis-Queue-red)
-![Celery](https://img.shields.io/badge/Celery-Workers-brightgreen)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+![React](https://img.shields.io/badge/React-Dashboard-61dafb)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Metrics-blue)
+![Redis](https://img.shields.io/badge/Redis-Streaming-red)
 
-![Demo](docs/notification-demo.gif)
+Pipeline completo de ingestión, procesamiento, monitorización y visualización de logs en tiempo real, inspirado en conceptos utilizados en plataformas como Datadog, ELK y herramientas modernas de observabilidad.
 
-<<<<<<< HEAD
 ![Dashboard Demo](docs/Animation.gif)
-=======
-Backend orientado a eventos para gestionar notificaciones asíncronas con procesamiento en background usando colas y workers.
->>>>>>> 8a15842 (Stabilize local demo generator and fix worker startup)
-
-Inspirado en patrones habituales de sistemas distribuidos.
-
----
-
-## Highlights
-
-- Async notification processing
-- Redis-backed task queue
-- Celery background workers
-- Persisted state transitions
-- Event-driven backend design
 
 ---
 
 ## 📌 Descripción
 
-Este proyecto simula un servicio de notificaciones capaz de:
+Este proyecto simula una plataforma de observabilidad end-to-end capaz de:
 
-- Recibir solicitudes vía API REST
-- Persistir eventos de notificación
-- Encolar tareas en Redis
-- Procesar trabajos asíncronos con Celery
-- Mantener trazabilidad mediante estados persistidos
+- Ingerir eventos vía API REST
+- Procesar logs en tiempo real con Redis Pub/Sub
+- Agregar métricas por ventanas temporales
+- Detectar anomalías automáticamente
+- Generar alertas y eventos de recuperación
+- Visualizar salud del sistema mediante dashboard interactivo
+- Consumir eventos en vivo vía WebSocket
 
-Más que una API CRUD, el foco fue construir un servicio pequeño pero representativo de patrones backend reales.
+Más que una API CRUD, el objetivo fue construir un proyecto orientado a ingeniería backend y pensamiento sistémico.
 
 ---
 
-## 🧠 Arquitectura
+# 🧠 Arquitectura
 
 ```text
 Cliente
   ↓
-FastAPI API
+FastAPI (/logs)
   ↓
-PostgreSQL (queued)
+Redis Pub/Sub
   ↓
-Redis Broker
++---------------------+
+|                     |
+↓                     ↓
+Log Worker        Alert Worker
+|                     |
+↓                     ↓
+PostgreSQL        Alertas
   ↓
-Celery Worker
+FastAPI (/metrics + websocket)
   ↓
-processing → sent / failed
+Dashboard React en tiempo real
 ```
 
 ---
 
-## ⚙️ Stack Tecnológico
+# ⚙️ Stack Tecnológico
 
-### Backend
+## Backend
 
-- Python
 - FastAPI
+- Python
 - SQLAlchemy
 - PostgreSQL
-
-### Event Processing
-
 - Redis
-- Celery
+- Alembic
 
-### Infraestructura
+## Frontend
 
-- Docker Compose
-- Pytest
-
----
-
-## 📊 Funcionalidades
-
-### Gestión de estados
-
-Cada notificación recorre este ciclo de vida:
-
-```text
-queued
-processing
-sent
-failed
-```
-
-Esto permite:
-
-- Trazabilidad
-- Auditoría
-- Reintentos futuros
-- Estado observable del sistema
-
----
-
-### Procesamiento asíncrono
-
-Flujo:
-
-1. La API persiste la notificación
-2. Se encola una tarea en Redis
-3. Celery consume la cola
-4. Worker actualiza estado a processing
-5. Simula el envío
-6. Marca sent o failed
-
-Patrón clásico productor → broker → consumidor.
-
----
-
-## API Endpoints
-
-```http
-GET  /health
-POST /notifications
-GET  /notifications/{notification_id}
-```
-
-### Crear notificación
-
-Payload:
-
-```json
-{
-  "user_id": "42",
-  "channel": "email",
-  "payload": {
-    "message": "hello"
-  }
-}
-```
-
-Response:
-
-```json
-{
-  "id": "uuid",
-  "status": "queued"
-}
-```
-
----
-
-## 🧪 Tests
-
-Incluye tests para:
-
-- Health endpoint
-- Create notification
-- Get notification
-
-Ejecutar:
-
-```bash
-pytest -v
-```
-
----
-
-## ▶️ Ejecución Local
-
-Clonar:
-
-```bash
-git clone https://github.com/Marcial-Godes/event-driven-notification-service.git
-cd event-driven-notification-service
-```
-
-Crear entorno virtual:
-
-```bash
-python -m venv .venv
-```
-
-Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-Instalar dependencias:
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## Variables de entorno
-
-Crear `.env` desde el ejemplo.
-
-Windows:
-
-```bash
-copy .env.example .env
-```
-
-Linux / Mac:
-
-```bash
-cp .env.example .env
-```
-
----
+- React
+- Recharts
+- WebSockets
 
 ## Infraestructura
 
-```bash
-docker compose up -d
-```
-
-Levanta:
-
-- PostgreSQL
-- Redis
+- Docker / Docker Compose
+- Render
+- GitHub
 
 ---
 
-## Ejecutar API
+# 📊 Funcionalidades
+
+## Dashboard de Observabilidad
+
+Incluye monitorización en tiempo real de:
+
+- Total de eventos
+- Volumen de errores
+- Latencia media
+- Error rate
+- Disponibilidad (uptime)
+- Estado del sistema (Healthy / Warning / Critical)
+- Endpoints más lentos
+- Evolución temporal de errores y latencia
+- Umbral SLO e indicadores de incidente
+
+---
+
+## Agregación de Métricas
+
+Los logs se procesan y agregan por minuto para generar:
+
+- Request volume
+- Error counts
+- Error rate
+- Latencias ponderadas
+- Ranking de rendimiento por endpoint
+
+Filtros soportados:
+
+- Ventanas temporales
+- Endpoint específico
+
+---
+
+## Sistema de Alertas
+
+Worker dedicado para detección automática de anomalías:
+
+- Alertas por error rate crítico
+- Eventos de recuperación automática
+- Cooldown para evitar alertas duplicadas
+
+---
+
+## Streaming en Vivo
+
+Actualización vía WebSocket de:
+
+- Nuevos eventos
+- Alertas activas
+- Recovery events
+
+Sin refresco de página.
+
+---
+
+# 🔄 Flujo de Datos
+
+1. Cliente envía un log a `/logs`
+2. Redis publica el evento
+3. Worker consume y agrega métricas
+4. Alert worker evalúa umbrales
+5. PostgreSQL persiste métricas
+6. Frontend consulta `/metrics`
+7. WebSocket transmite eventos en vivo
+
+---
+
+# 🧪 Generación de Tráfico de Prueba
+
+El repositorio incluye simulador para probar el pipeline completo en local:
 
 ```bash
-uvicorn app.main:app --reload --reload-exclude .venv
+python scripts/demo_generate_logs.py
 ```
 
-Swagger:
+Permite simular:
 
-```text
-http://127.0.0.1:8000/docs
+- Tráfico normal
+- Errores 4xx / 5xx
+- Picos de latencia
+- Escenarios para disparar alertas
+- Datos para poblar el dashboard
+
+Útil para validar comportamiento end-to-end del sistema.
+
+---
+
+# ▶️ Ejecución Local
+
+## Backend
+
+```bash
+uvicorn main:app --reload
+```
+
+## Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Docker (opcional)
+
+```bash
+docker compose up --build
 ```
 
 ---
 
-## Ejecutar Worker
+# 🌐 Demo
 
-Windows:
+### Frontend
 
-```bash
-celery -A app.workers.tasks worker --pool=solo --loglevel=info
-```
+https://log-pipeline-viff.onrender.com
 
-Nota:
+### API
 
-Windows requiere:
-
-```bash
---pool=solo
-```
+https://logs-api-ull9.onrender.com
 
 ---
 
-## 🛠 Qué demuestra este proyecto
+# 🛠 Qué demuestra este proyecto
 
 Este proyecto pone foco en:
 
 - Arquitectura orientada a eventos
-- Queue-based processing
-- Background workers
-- Persistencia de estados
-- Integración API + broker + worker
+- Procesamiento con workers en background
+- Observabilidad y monitorización
+- Integración API + WebSockets
 - Diseño backend más allá de CRUD
+- Patrones de fiabilidad e incident response
 
 ---
 
-## Diseño y decisiones
+# 🎯 Objetivo del Proyecto
 
-### ¿Por qué UUID?
+Quería construir algo más cercano a ingeniería backend real que un proyecto típico de APIs.
 
-Encaja mejor que ids secuenciales en sistemas distribuidos.
+El foco fue trabajar conceptos como:
 
----
+- Streaming de datos
+- Métricas operacionales
+- Alerting
+- Señales de fiabilidad
+- Visualización en tiempo real
 
-### ¿Por qué Redis + Celery?
-
-Patrón clásico, simple y probado para procesamiento en background.
-
----
-
-### ¿Por qué estados persistidos?
-
-Permiten trazabilidad:
-
-```text
-queued → processing → sent
-```
-
-Y en fallo:
-
-```text
-failed
-```
+En esencia, una versión simplificada de una plataforma de observabilidad.
 
 ---
 
-## 🔭 Mejoras Futuras
+# 🔭 Mejoras Futuras
 
-- Retries con backoff
-- Dead letter queue
-- Rate limiting
-- Integración real con proveedores email/SMS
-- Alembic migrations
-- Métricas Prometheus
-- Dockerización completa API + worker
-- RabbitMQ o Kafka como broker alternativo
+Posibles iteraciones futuras:
+
+- Exportación estilo Prometheus
+- Integración OpenTelemetry
+- Kafka en lugar de Redis Pub/Sub
+- Dashboards multi-tenant
+- Integración Grafana
+- Despliegue en Kubernetes
 
 ---
 
-## Estructura del proyecto
+## Highlights
 
-```bash
-.
-├── app
-│   ├── core/
-│   ├── db/
-│   ├── models/
-│   ├── schemas/
-│   ├── workers/
-│   └── main.py
-│
-├── tests/
-├── docs/
-│   └── notification-demo.gif
-│
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
-```
+- Real-time log ingestion pipeline
+- Redis Pub/Sub event streaming
+- Automated anomaly detection
+- SLO latency visualization
+- WebSocket live observability dashboard
 
 ---
 
 ## Estado del proyecto
 
-Proyecto completado como portfolio backend.
+Proyecto completado como portfolio de observabilidad.
 Nuevas mejoras futuras se orientarán únicamente a evolución técnica.
 
 ---

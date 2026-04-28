@@ -18,12 +18,7 @@ def metrics_window(
     endpoint: str | None = Query(None),
     db: Session = Depends(get_db)
 ):
-    since = (
-        datetime.now(UTC) - timedelta(minutes=minutes)
-    ).replace(
-        second=0,
-        microsecond=0
-    )
+    since = datetime.now(UTC) - timedelta(minutes=minutes)
 
     base_query = db.query(Metric).filter(
         Metric.timestamp_minute >= since
@@ -105,12 +100,7 @@ def metrics_timeseries(
         microsecond=0
     )
 
-    since = (
-        now - timedelta(minutes=minutes)
-    ).replace(
-        second=0,
-        microsecond=0
-    )
+    since = now - timedelta(minutes=minutes)
 
     rows_query = db.query(
         Metric.timestamp_minute,

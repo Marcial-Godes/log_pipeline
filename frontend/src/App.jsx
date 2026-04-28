@@ -31,11 +31,7 @@ const formatTimeSafe = (value) => {
     if (!value) return "";
     const d = new Date(value);
     if (!isNaN(d))
-      return d.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false
-      });
+      return d.toLocaleTimeString();
     return value;
   };
 
@@ -859,16 +855,6 @@ const detectClient = (ua) => {
     dataKey="minute_label"
     interval="preserveStartEnd"
     minTickGap={0}
-    tickFormatter={(value) =>
-      new Date(value).toLocaleTimeString(
-        [],
-        {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false
-        }
-      )
-    }
   />
 
   <YAxis
@@ -943,14 +929,14 @@ const detectClient = (ua) => {
   }}
 />
 
-  {/* <Brush
+  <Brush
     dataKey="minute_label"
     height={8}
     stroke="#334155"
     travellerWidth={8}
     fill="#0f172a"
     tickFormatter={() => ""}
-  /> */}
+  />
 </LineChart>
         </ResponsiveContainer>
       </div>
