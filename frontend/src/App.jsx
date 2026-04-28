@@ -25,7 +25,7 @@ import {
 
 
 // Endpoints de API y WebSocket (fallback local para desarrollo)
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const formatTimeSafe = (value) => {
     if (!value) return "";
@@ -379,11 +379,17 @@ const detectClient = (ua) => {
       const data2 = await res2.json();
       
       setTimeSeries(
-  (data2.series || []).map(item => ({
-    ...item,
-    minute_label: item.minute
-  }))
-);
+        (data2.series || []).map(item => ({
+          ...item,
+          minute_label: new Date(item.minute).toLocaleTimeString(
+            [],
+            {
+              hour: "2-digit",
+              minute: "2-digit"
+            }
+          )
+        }))
+      );
     };
 
     fetchMetrics();
@@ -854,7 +860,7 @@ const detectClient = (ua) => {
   <XAxis
     dataKey="minute_label"
     interval="preserveStartEnd"
-    minTickGap={0}
+    minTickGap={30}
   />
 
   <YAxis
